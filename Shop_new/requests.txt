@@ -1,0 +1,9 @@
+"" - создание товаров
+"{userid}/orders" - получить заказы для юзера
+"{userid}/addorder" - создать заказ для юзера
+"{userid}/{orderid}/addorderunit" - добавить единицу товара в заказ
+"{userid}/addpayment" - юзер вносит платеж
+"{userid}/{orderid}/delete" - удалить заказ
+
+
+добавить удалить счет
