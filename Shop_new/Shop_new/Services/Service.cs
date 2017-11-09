@@ -25,7 +25,8 @@ namespace Shop_new.Services
                 {
                     //var q = JsonConvert.SerializeObject(obj);
                    // var z = new StringContent(q, Encoding.UTF8, "application/json");
-                    return await client.PostAsync(GetAddress(addr), new StringContent(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json"));
+                    var result = await client.PostAsync(GetAddress(addr), new StringContent(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json"));
+                    return result.StatusCode != System.Net.HttpStatusCode.Forbidden ? result : null;
                 }
                 catch
                 {
@@ -64,7 +65,8 @@ namespace Shop_new.Services
             using (var client = new HttpClient())
                 try
                 {
-                    return await client.GetAsync(GetAddress(addr));
+                    var result = await client.GetAsync(GetAddress(addr));
+                    return result.StatusCode != System.Net.HttpStatusCode.Forbidden ? result : null;
                 }
                 catch
                 {
@@ -77,7 +79,8 @@ namespace Shop_new.Services
             using (var client = new HttpClient())
                 try
                 {
-                    return await client.DeleteAsync(GetAddress(addr));
+                    var result = await client.DeleteAsync(GetAddress(addr));
+                    return result.StatusCode != System.Net.HttpStatusCode.Forbidden ? result : null;
                 }
                 catch
                 {

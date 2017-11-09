@@ -64,19 +64,25 @@ namespace Shop_new.Controllers
         }
 
         [HttpGet("bills")] //получить все счета, которые есть
-        public async Task<List<BillModel>> GetBills(int page = 0, int perpage = 0)
+        public async Task<List<string>> GetBills(int page = 0, int perpage = 0)
         {
-            List<BillModel> response = await billService.GetBills(page, perpage);
-            if (response != null)
+            var response = (await billService.GetBills(page, perpage))?.Select(b => $"Billfor order {b.UserId} (pay {b.AmountPaid})").ToList();
+            var response_2 = (await orderService.GetOrdersForUser(1, page, perpage))?.Select(b => $"Order: {b.Id}").ToList();
+            if (response != null && response_2 != null)
             {
                 //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                return response;
+                return response.Concat(response_2).ToList();
             }
-            else
-            {
+            if (response_2 != null)
+                return response_2;
+
+            if (response != null)
+                return response;
+           // else
+            //{
                 logger.LogCritical("Bills service unavailable");
                 return null;
-            }
+            //}
         }
 
         //считывает информацию с нескольких сервисов
@@ -260,6 +266,7 @@ namespace Shop_new.Controllers
         [HttpDelete("{userid}/{orderid}/delete")] //удалить заказ
         public async Task<IActionResult> RemoveOrder(int userid, int orderid)
         {
+
             var response = await orderService.RemoveOrder(userid, orderid);
             if (response != null)
             {
@@ -273,16 +280,25 @@ namespace Shop_new.Controllers
                     MyQeue.Retry(async () =>
                     {
                         using (var client = new HttpClient())
-                        {
-                            var response_3 = await client.DeleteAsync($"http://localhost/{userid}/{orderid}/delete");
-                            if (response_3.IsSuccessStatusCode)
+                        {// try catch здесь
+                            try
+                            {
+                                var response_3 = await billService.RemoveBillByOrder(orderid);
+                                if (response_3 != null)
+                                //var response_3 = await client.DeleteAsync($"http://localhost/{orderid}/deletebill");
+                                //if (response_3.IsSuccessStatusCode)
                                 return true;
-                            return false;
+                                return false;
+                            }
+                            catch
+                            {
+                                return false;
+                            }
                         }
                     });
                     return StatusCode(503, "Services status: " +
                         $"Order: {(response != null ? "online" : "offline")};   " +
-                        $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2.StatusCode}");
+                        $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}");
 
                     //logger.LogCritical("Bill service unavailable");
                     //return StatusCode(503, "Bill service unavailable");
@@ -292,6 +308,15 @@ namespace Shop_new.Controllers
             }
             logger.LogCritical("Order service unavailable");
             return StatusCode(503, "Order service unavailable");
+        }
+
+        [HttpDelete("{orderid}/deletebill")] //удалить счет
+        public async Task<IActionResult> RemoveBill( int orderid)
+        {
+            var response = await billService.RemoveBillByOrder(orderid);
+            if (response != null && response.IsSuccessStatusCode)
+                return Ok();
+            return BadRequest();
         }
 
         //откат действий

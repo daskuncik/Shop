@@ -59,22 +59,50 @@ namespace Shop_new.Services
 
         public async Task<HttpResponseMessage> AddBill(int orderid)
         {
-            return await PostForm($"{orderid}", new Dictionary<string, string>());
+            try
+            {
+                return await PostForm($"{orderid}", new Dictionary<string, string>());
+            }
+            catch
+            {
+                return null;
+            }
         }
 
 
         public async Task<HttpResponseMessage> AddPaymentToBill(int orderid, int sum)
         {
-            return await PostForm($"{orderid}/pay", new Dictionary<string, string>() { {"sum", sum.ToString() } });
+            try
+            {
+                return await PostForm($"{orderid}/pay", new Dictionary<string, string>() { { "sum", sum.ToString() } });
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public async Task<HttpResponseMessage> RemoveBill(int id)
         {
-            return await Delete($"{id}/delete");
+            try
+            {
+                return await Delete($"{id}/delete");
+            }
+            catch
+            {
+                return null;
+            }
         }
         public async Task<HttpResponseMessage> RemoveBillByOrder(int id)
         {
-            return await Delete($"{id}/byorder");
+            try
+            {
+                return await Delete($"{id}/byorder");
+            }
+            catch
+            {
+                return null;
+            }
         }
 
     }

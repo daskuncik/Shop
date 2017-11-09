@@ -42,7 +42,15 @@ namespace WareHouseService.Controllers
                     logger.LogDebug($"Retrieving at max {perpage} goods");
                     good = good.Take(perpage);
                 }
-                return good.Select(g => $"Name: {g.Name}{Environment.NewLine}Price: {g.Price}{Environment.NewLine}Count: {g.Count}").ToList();
+                var list = new List<string>();
+                foreach (var m in good)
+                {
+                    WareHouseModel model = new WareHouseModel { Name = m.Name, Count = m.Count, Price = m.Price };
+                    list.Add(JsonConvert.SerializeObject(model));
+                }
+
+                return list;
+                //return good.Select(g => $"Name: {g.Name}{Environment.NewLine}Price: {g.Price}{Environment.NewLine}Count: {g.Count}").ToList();
             }
             logger.LogWarning($"No goods with this name: {name}");
             return new List<string>();
@@ -104,12 +112,15 @@ namespace WareHouseService.Controllers
             var good = db.Goods.FirstOrDefault(q => q.Name == name);
             if (good != null)
             {
-                string str = "";
-                str += $"Name: {good.Name}{Environment.NewLine}";
-                str += $"Price: {good.Price}{Environment.NewLine}";
-                str += $"Count: {good.Count}{Environment.NewLine}";
                 logger.LogDebug($"Returning goods with name: {name}");
-                return str;
+                WareHouseModel model = new WareHouseModel { Name = good.Name, Count = good.Count, Price = good.Price };
+                return JsonConvert.SerializeObject(model);
+                //string str = "";
+                //str += $"Name: {good.Name}{Environment.NewLine}";
+               // str += $"Price: {good.Price}{Environment.NewLine}";
+               // str += $"Count: {good.Count}{Environment.NewLine}";
+               
+                //return str;
             }
             logger.LogDebug($"Goods with name: {name} not found");
             return "";

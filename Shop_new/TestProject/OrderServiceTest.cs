@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 namespace TestProject
 {
     [TestClass]
-    class OrderServiceTest
+    public class OrderServiceTest
     {
         private ILogger<OrderController> logger;
         private OrderDbContext dbContext;
@@ -70,10 +70,10 @@ namespace TestProject
             var controller = GetOrderController();
 
             var result = controller.AddOrder(1).Result;
-            var result_2 = controller.AddOrderUnit(1, 1, 2);
+            var result_2 = controller.AddOrderUnit(1, 0, 2);
             //Assert.IsTrue(result is OkResult);
             //Assert.IsTrue(Orders.Any(q => q.UserId == 1));
-            Assert.IsTrue(result == 1);
+            Assert.IsTrue(result == 0);
             //Assert.IsTrue(result_2 is OkResult);
         }
 
@@ -89,9 +89,12 @@ namespace TestProject
         {
             if (Orders == null)
                  Orders = new List<Order>();
+            if (OrderUnits != null)
             return Mock.Of<OrderDbContext>(db =>
                 db.Orders == GetOrders(Orders) &&
                 db.OrderUnits == GetOrderUnits(OrderUnits));
+            return Mock.Of<OrderDbContext>(db =>
+               db.Orders == GetOrders(Orders));
         }
 
         private DbSet<OrderUnit> GetOrderUnits(List<OrderUnit> orderUnits)
