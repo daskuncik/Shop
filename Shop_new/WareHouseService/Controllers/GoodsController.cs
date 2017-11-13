@@ -45,7 +45,7 @@ namespace WareHouseService.Controllers
                 var list = new List<string>();
                 foreach (var m in good)
                 {
-                    WareHouseModel model = new WareHouseModel { Name = m.Name, Count = m.Count, Price = m.Price };
+                    WareHouseModel model = new WareHouseModel { Id = m.Id, Name = m.Name, Count = m.Count, Price = m.Price };
                     list.Add(JsonConvert.SerializeObject(model));
                 }
 
@@ -75,7 +75,7 @@ namespace WareHouseService.Controllers
             List<Good> resList = new List<Good>();
             foreach (var el in good)
             {
-                resList.Add(new Good { Name=el.Name, Count = el.Count, Price=el.Price});
+                resList.Add(new Good {Id = el.Id, Name=el.Name, Count = el.Count, Price=el.Price});
             }
             return JsonConvert.SerializeObject(resList);
             //return good.Select(g => $"Name: {g.Name}{Environment.NewLine}Price: {g.Price}{Environment.NewLine}Count: {g.Count}").ToList();
@@ -91,7 +91,7 @@ namespace WareHouseService.Controllers
             var good = db.Goods.FirstOrDefault(q => q.Id == id);
             if (good != null)
             {
-                WareHouseModel model = new WareHouseModel { Name = good.Name, Count = good.Count, Price = good.Price };
+                WareHouseModel model = new WareHouseModel {Id = good.Id, Name = good.Name, Count = good.Count, Price = good.Price };
                 //string str = "";
                // str += $"Name: {good.Name}{Environment.NewLine}";
                 //str += $"Price: {good.Price}{Environment.NewLine}";
@@ -113,7 +113,7 @@ namespace WareHouseService.Controllers
             if (good != null)
             {
                 logger.LogDebug($"Returning goods with name: {name}");
-                WareHouseModel model = new WareHouseModel { Name = good.Name, Count = good.Count, Price = good.Price };
+                WareHouseModel model = new WareHouseModel {Id = good.Id, Name = good.Name, Count = good.Count, Price = good.Price };
                 return JsonConvert.SerializeObject(model);
                 //string str = "";
                 //str += $"Name: {good.Name}{Environment.NewLine}";

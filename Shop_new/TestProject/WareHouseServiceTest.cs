@@ -37,7 +37,7 @@ namespace TestProject
             var controller = GetGoodController();
             var result = controller.GetInfForGoodName("samsung",0,0);
             List<string> list = new List<string>();
-            var g2 = new WareHouseModel { Name = "samsung", Count = 10, Price = 20000 };
+            var g2 = new WareHouseModel {Id=1, Name = "samsung", Count = 10, Price = 20000 };
             list.Add(JsonConvert.SerializeObject(g2));
             var str = JsonConvert.SerializeObject(g2);
             var resstr = result.Result[0];
@@ -84,7 +84,7 @@ namespace TestProject
         {
             List<Good> ll = new List<Good>();
             var g = new Good { Id = 1, Name = "samsung", Count = 10, Price = 20000 };
-            var g2 = new WareHouseModel {Name = "samsung", Count = 10, Price = 20000 };
+            var g2 = new WareHouseModel { Id = 1, Name = "samsung", Count = 10, Price = 20000 };
             ll.Add(g);
             dbContext = GetDbContext(ll);
             var controller = GetGoodController();
@@ -112,7 +112,7 @@ namespace TestProject
         {
             List<Good> ll = new List<Good>();
             var g = new Good { Id = 1, Name = "samsung", Count = 10, Price = 20000 };
-            var g2 = new WareHouseModel { Name = "samsung", Count = 10, Price = 20000 };
+            var g2 = new WareHouseModel {Id = 1, Name = "samsung", Count = 10, Price = 20000 };
             ll.Add(g);
             dbContext = GetDbContext(ll);
             var controller = GetGoodController();

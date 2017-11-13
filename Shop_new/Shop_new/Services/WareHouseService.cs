@@ -32,6 +32,7 @@ namespace Shop_new.Services
                     model.Count = el.Count;
                     model.Name = el.Name;
                     model.Price = el.Price;
+                    model.Id = el.Id;
                     list.Add(model);
                 }
                 return list;
@@ -60,6 +61,7 @@ namespace Shop_new.Services
                     model.Count = el.Count;
                     model.Name = el.Name;
                     model.Price = el.Price;
+                    model.Id = el.Id;
                     list.Add(model);
                 }
                 return list;
@@ -86,6 +88,7 @@ namespace Shop_new.Services
                 model.Count = aa.Count;
                 model.Name = aa.Name;
                 model.Price = aa.Price;
+                model.Id = aa.Id;
                 return model;
                 //return JsonConvert.DeserializeObject<WareHouseModel>(response);
             }
@@ -110,6 +113,7 @@ namespace Shop_new.Services
                 model.Count = aa.Count;
                 model.Name = aa.Name;
                 model.Price = aa.Price;
+                model.Id = aa.Id;
                 return model;
                 //return JsonConvert.DeserializeObject<WareHouseModel>(response);
             }

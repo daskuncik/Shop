@@ -33,6 +33,11 @@ namespace Shop_new.Controllers
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
         public async Task<List<OrderModel>> GetOrders(int userid, int page = 0, int perpage = 0)
         {
+            if (userid == 0)
+                return null;
+            if ((page != 0 && perpage == 0) || (page == 0 && perpage != 0))
+                return null;
+
             List<OrderModel> response = await orderService.GetOrdersForUser(userid, page, perpage);
             if (response != null)
             {
@@ -63,7 +68,8 @@ namespace Shop_new.Controllers
             }
         }
 
-        [HttpGet("bills")] //получить все счета, которые есть
+        //деградация функционала
+        [HttpGet("bills")] //получить все счета и заказы, которые есть
         public async Task<List<string>> GetBills(int page = 0, int perpage = 0)
         {
             var response = (await billService.GetBills(page, perpage))?.Select(b => $"Billfor order {b.UserId} (pay {b.AmountPaid})").ToList();
@@ -85,7 +91,7 @@ namespace Shop_new.Controllers
             //}
         }
 
-        //считывает информацию с нескольких сервисов
+
         [HttpGet("{userid}/info/{orderid}")] //получить состав заказа
         public async Task<List<OrderUnitModel>> GetOrderUnitsForOrder(int userid, int orderid)
         {
@@ -102,10 +108,13 @@ namespace Shop_new.Controllers
             }
         }
 
-        //модификация нескольких сервисов. откат
+        //модификация нескольких сервисов.
+        //откат
         [HttpPost("{userid}/addorder")] //добавить заказ
         public async Task<IActionResult> AddOrder(int userid)
         {
+            if (userid == 0)
+                return StatusCode(400, "Invalid User");
             var response = await orderService.AddOrder(userid);
             var aa = response.Content.ReadAsStringAsync().Result;
             if (response != null)
@@ -163,20 +172,25 @@ namespace Shop_new.Controllers
                     var price = await warehouseService.GetGoodsPriceForId(goodsid);
                     if (price != null)
                     {
-                       // logger.LogInformation($"Got price from warehouse, response {response.StatusCode}");
-                        int price_sum = Convert.ToInt32(price.ToString());
-                        var response_2 = await orderService.AddPrice(userid, orderid, price_sum);
-                        if (response_2 != null)
+                        if (price != "")
                         {
-                            logger.LogInformation($"Added sum to order, response {response_2.StatusCode}");
-                            return Ok();
+                            // logger.LogInformation($"Got price from warehouse, response {response.StatusCode}");
+                            int price_sum = Convert.ToInt32(price.ToString());
+                            var response_2 = await orderService.AddPrice(userid, orderid, price_sum);
+                            if (response_2 != null)
+                            {
+                                logger.LogInformation($"Added sum to order, response {response_2.StatusCode}");
+                                return Ok();
+                            }
+                            else
+                            {
+                                logger.LogCritical("Order service unavailable");
+                                return StatusCode(503, "Order service unavailable");
+                                //return NotFound("Service unavailable");
+                            }
                         }
                         else
-                        {
-                            logger.LogCritical("Order service unavailable");
-                            return StatusCode(503, "Order service unavailable");
-                            //return NotFound("Service unavailable");
-                        }
+                            return StatusCode(400, "Invalid goods");
                     }
                     else
                     {
@@ -201,14 +215,15 @@ namespace Shop_new.Controllers
         [HttpPost("{userid}/addpayment")] //добавить платеж в заказ
         public async Task<IActionResult> AddPayment(int userid, int orderid, int sum)
         {
-
+            if (userid == 0 || orderid == 0 || sum == 0)
+                return StatusCode(400, "Bad Request");
             var orderExists = await orderService.CheckIfOrderExists(new UserOrderModel { useridId = userid, orderId = orderid });
             logger.LogInformation($"Order response: {orderExists?.StatusCode}");
             if (orderExists == null)
                 return StatusCode(503, "Order service unavailable");
-            //return NotFound("Order service unavailable");
-            if (orderExists.StatusCode != System.Net.HttpStatusCode.OK)
-                return StatusCode(500, "Order doesn't exists");
+   
+            if (!orderExists.IsSuccessStatusCode)
+                    return StatusCode(400, "Order doesn't exists");
             //return NotFound("Order doesn't exists");
 
             var response = await billService.GetBillForOrder(orderid);
@@ -234,31 +249,57 @@ namespace Shop_new.Controllers
                 else
                 {
                     logger.LogCritical($"Bill for order {orderid} not");
-                    return StatusCode(500, $"Bill for order {orderid} not");
+                    return StatusCode(400, $"Bill for order {orderid} not");
                     //return BadRequest();
                 }
             }
             else
             {
-
-
+                string billid ="";
                 MyQeue.Retry(async () =>
                 {
                 using (var client = new HttpClient())
                 {
-                        var response_2 = await client.PostAsync($"http://localhost/{userid}/addpayment",
-                            new FormUrlEncodedContent(new Dictionary<string, string> { { "orderid", orderid.ToString() }, {"sum", sum.ToString() } }));
-                        if (response_2.IsSuccessStatusCode)
+                        billid = await billService.GetBillForOrder(orderid);
+                        if (billid != null)
                             return true;
+                            
                         return false;
                     }
                 });
-                return StatusCode(503, "Services status: " +
-                    $"Order: {(orderExists != null ? "online" : "offline")};" +
-                    $"Bill: {(response != null ? "online" : "offline")};");
+                if (billid != "")
+                {
+                    var response_4 = await billService.AddPaymentToBill(orderid, sum);
+                    if (response_4 != null)
+                    {
+                        if (response_4.IsSuccessStatusCode)
+                            return Ok();
+                        return StatusCode(400, "BadRequest");
+                    }
+                    HttpResponseMessage response_5 = null;
+                    MyQeue.Retry(async () =>
+                    {
+                        using (var client = new HttpClient())
+                        {
+                            response_5 = await billService.AddPaymentToBill(orderid, sum);
+                            if (response_5 != null)
+                                return true;
+
+                            return false;
+                        }
+                    });
+                    if (response_5.IsSuccessStatusCode)
+                        return Ok();
+                    return StatusCode(400, "Bad Request for add bill");
+
+                }
+                return StatusCode(400, "Bad Request for bill");
                 //logger.LogCritical("Bill service unavailable");
                 //return NotFound("Service unavailable");
             }
+            return StatusCode(503, "Services status: " +
+                    $"Order: {(orderExists != null ? "online" : "offline")};" +
+                    $"Bill: {(response != null ? "online" : "offline")};");
         }
 
 
@@ -266,7 +307,8 @@ namespace Shop_new.Controllers
         [HttpDelete("{userid}/{orderid}/delete")] //удалить заказ
         public async Task<IActionResult> RemoveOrder(int userid, int orderid)
         {
-
+            if (userid == 0 || orderid == 0)
+                return StatusCode(400, "Bad Request");
             var response = await orderService.RemoveOrder(userid, orderid);
             if (response != null)
             {
@@ -285,8 +327,6 @@ namespace Shop_new.Controllers
                             {
                                 var response_3 = await billService.RemoveBillByOrder(orderid);
                                 if (response_3 != null)
-                                //var response_3 = await client.DeleteAsync($"http://localhost/{orderid}/deletebill");
-                                //if (response_3.IsSuccessStatusCode)
                                 return true;
                                 return false;
                             }
@@ -304,7 +344,7 @@ namespace Shop_new.Controllers
                     //return StatusCode(503, "Bill service unavailable");
                     //return NotFound("Service unavailable");
                 }
-                return StatusCode(500, response.Content.ReadAsStringAsync()?.Result);
+                return StatusCode(400, "Bad Request");
             }
             logger.LogCritical("Order service unavailable");
             return StatusCode(503, "Order service unavailable");
@@ -313,6 +353,8 @@ namespace Shop_new.Controllers
         [HttpDelete("{orderid}/deletebill")] //удалить счет
         public async Task<IActionResult> RemoveBill( int orderid)
         {
+            if (orderid == 0)
+                return StatusCode(400, "Bad Request");
             var response = await billService.RemoveBillByOrder(orderid);
             if (response != null && response.IsSuccessStatusCode)
                 return Ok();
@@ -323,6 +365,8 @@ namespace Shop_new.Controllers
         [HttpDelete("{userid}/{orderid}/deleteunit")] //удалить товар из заказа
         public async Task<IActionResult> RemoveOrderUnit(int userid, int orderid, int goodsid)
         {
+            if (userid == 0 || orderid == 0 || goodsid == 0)
+                return StatusCode(400, "Bad Request");
             var response = await orderService.RemoveOrderUnit(orderid, goodsid);
             if (response != null)
             {
@@ -348,7 +392,7 @@ namespace Shop_new.Controllers
 
                         }
                         else
-                            return StatusCode(503, $"Cann't find in warehouse goods with Id: {goodsid}");
+                            return StatusCode(400, $"No goods {goodsid}");
                     }
                     else
                     {
