@@ -3,12 +3,17 @@
     Layout = "_Layout";
 }
 
-@if (ViewBag.Value != null)
+<!--if (ViewBag.Value != null)
 {
     <div style="border-top: 40px">
-        <font color="red"> В корзине <b>@ViewBag.Value.ToString()</b> элементов</font>
+        <font color="red"> В корзине <b>ViewBag.Value.ToString()</b> элементов</font>
     </div>
 }
+-->
+
+<form method="post" action="@ViewBag.UserId.ToString()/addorder" >
+    <button>Создать заказ</button>
+</form> 
 
 <table style="margin-top: 40px" class="table" border="1">
     <tr>
@@ -21,14 +26,12 @@
         <th>
             <p>Дата составления заказа</p>
         </th>
-        <th>
-            <p></p>
-        </th>
     </tr>
     @foreach (var item in Model)
     {
-        <tr>
-            <a href="@item.UserId/info/@item.Id">
+        <!--<a href="item.UserId/info/item.Id"> -->
+            <tr onclick="window.location.href='@item.UserId.ToString()/info/@item.Id'; return false">
+
                 <td>
                     <strong><em>@item.TotalSum.ToString()</em></strong>
                 </td>
@@ -38,8 +41,9 @@
                 <td>
                     @Html.DisplayFor(modelItem => item.Date)
                 </td>
-            </a>
-        </tr>
+
+            </tr>
+        <!--</a> -->
     }
 </table>
 

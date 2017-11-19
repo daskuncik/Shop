@@ -1,0 +1,75 @@
+﻿@model IEnumerable<Shop_new.Models.WareHouseModel>
+@{
+    Layout = "_Layout";
+}
+
+<form method="post" action="@ViewBag.UserId.ToString()/addorder">
+    <button>Создать заказ</button>
+</form> 
+
+<table style="margin-top: 40px" class="table" border="1">
+    <tr>
+        <th>
+            <p>Наименование</p>
+        </th>
+        <th>
+            <p>Доступно на складе</p>
+        </th>
+        <th>
+            <p>Цена</p>
+        </th>
+@if (ViewBag.OrderIds != null)
+{
+        <th>
+            <p>Добавить в заказ</p>
+        </th>
+}
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                <strong><em>@item.Name</em></strong>
+            </td>
+            <td>
+                 @if (item.Count > 0)
+                 {
+                        @Html.DisplayFor(modelItem => item.Count)
+                  }
+                  else
+                  {
+                     <p><font color = "red">0</font></p>
+                  }
+            </td>
+            <td>
+                <label style="font-size: large; font-weight: 700">
+                    @Html.DisplayFor(modelItem => item.Price)
+                </label>
+            </td>
+       @if (ViewBag.OrderIds != null)
+        {
+            <td>
+
+                <form method="post" action="/@ViewBag.UserId.ToString()/addorderunit/">
+                    <input type="hidden" name="goodsid" value=@item.Id />
+                    <p>
+                        <select name="orderid">
+                         <!--<select name="orderid" onchange="this.form.submit();"> -->
+                                <option>Выберите заказ</option>
+
+                                @foreach (var idd in ViewBag.OrderIds)
+                                {
+                                    <option value=@idd.Id.ToString()>@idd.Date.ToString()</option>
+
+                                }
+                            </select>
+                        
+                        <input type="submit" value="Добавить">
+                    </p>
+                </form>
+            </td>
+        }
+        </tr>
+
+    }
+    </table>

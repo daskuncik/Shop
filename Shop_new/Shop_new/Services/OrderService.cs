@@ -42,6 +42,26 @@ namespace Shop_new.Services
             }
         }
 
+        public async Task<OrderModel> GetOrder (int userid, int orderid)
+        {
+            var httpResponseMessage = await Get($"{userid}/order/{orderid}");
+            if (httpResponseMessage == null || httpResponseMessage.Content == null)
+                return null;
+
+            string response = await httpResponseMessage.Content.ReadAsStringAsync();
+            try
+            {
+                var aa = JsonConvert.DeserializeObject<OrderModel>(response);
+                if (aa != null)
+                    return aa;
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public async Task<List<OrderUnitModel>> GetUnitsForOrder(int userid, int orderid)
         {
             var httpResponseMessage = await Get($"{userid}/info/{orderid}");
@@ -51,21 +71,32 @@ namespace Shop_new.Services
             string response = await httpResponseMessage.Content.ReadAsStringAsync();
             try
             {
-                if (response != "No units")
+                if (response != null)
                 {
-                    var aa = JsonConvert.DeserializeObject<List<OrderUnitModel>>(response);
-                    List<OrderUnitModel> list = new List<OrderUnitModel>();
-                    foreach (OrderUnitModel el in aa)
+                    if (response != "")
                     {
-                        OrderUnitModel model = new OrderUnitModel();
-                        model.GoodsId = el.GoodsId;
-                        model.Count = el.Count;
-                        model.OrderId = el.OrderId;
-                        list.Add(model);
+                        var aa = JsonConvert.DeserializeObject<List<OrderUnitModel>>(response);
+                        List<OrderUnitModel> list = new List<OrderUnitModel>();
+                        foreach (OrderUnitModel el in aa)
+                        {
+                            OrderUnitModel model = new OrderUnitModel();
+                            model.GoodsId = el.GoodsId;
+                            model.Count = el.Count;
+                            model.OrderId = el.OrderId;
+                            list.Add(model);
+                        }
+                        return list;
                     }
-                    return list;
+                    var ac = new List<OrderUnitModel>();
+                    OrderUnitModel bb = new OrderUnitModel();
+                    bb.GoodsId = 0;
+                    bb.OrderId = 0;
+                    bb.Count = 0;
+                    ac.Add(bb);
+                    return ac;
+                    //return new List<OrderUnitModel>()
                 }
-                else
+                //else
                     return new List<OrderUnitModel>();
                 //return JsonConvert.DeserializeObject<List<string>>(response);
             }

@@ -1,0 +1,53 @@
+﻿@model IEnumerable<Shop_new.Models.GoodsUnitModel>
+@{
+    Layout = "_Layout";
+}
+
+<label style="font-size: large; font-style: italic">
+    Order Units for order from the date @ViewBag.Date
+</label>
+
+<label style="text-align:end; font-size: large; font-style: italic">
+    Total order value: <strong>@ViewBag.TotalSum</strong>
+</label>
+
+<h4>OrderUnits</h4>
+@if (Model != null)
+{
+    <table style="margin-top: 40px" class="table" border="1">
+        <tr>
+            <th>
+                <p>Наименование</p>
+            </th>
+            <th>
+                <p>Количество</p>
+            </th>
+            <th>
+                <p>Цена</p>
+            </th>
+            <th>
+                <p>Действия</p>
+            </th>
+        </tr>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <strong><em>@item.Name</em></strong>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Count)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Price)
+                </td>
+                <td>
+                    <form method="post" action="@ViewBag.UserId.ToString()/@ViewBag.OrderId.ToString()/deleteunit">
+                        <input type="hidden" name="goodsid" value=@item.GoodsId />
+                        <button>Удалить</button>
+                    </form> 
+                </td>
+            </tr>
+         }
+        </table>
+        }

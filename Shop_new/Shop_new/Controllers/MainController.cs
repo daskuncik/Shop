@@ -34,10 +34,22 @@ namespace Shop_new.Controllers
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
         public async Task<IActionResult> GetOrders(int? userid, int? page, int? perpage)
         {
+            ViewData["Title"] = "Orders";
             if (userid == null)
-                return StatusCode(400, "Invalid user"); //null;
+            {
+                ViewBag.UserId = null;
+                ViewBag.Message = "Invalid User";
+                return PartialView("_GetOrders");
+                //return StatusCode(400, "Invalid user"); //null;
+            }
             if ((page != null && perpage == null) || (page == null && perpage != null))
-                return StatusCode(400, "Invalid pages");//null;
+            {
+                ViewBag.UserId = userid.GetValueOrDefault(); ;
+                ViewBag.Message = "Invalid Pages";
+                return PartialView("_GetOrders");
+                //return StatusCode(400, "Invalid pages");//null;
+            }
+            
 
             if (page == null && perpage == null)
             {
@@ -53,41 +65,57 @@ namespace Shop_new.Controllers
                     string response_bill = await billService.GetBillForOrder(order.Id);
                     if (response_bill != "")
                     {
-                        var model = new PayOrderModel();
-                        model.Id = order.Id;
-                        model.Date = order.Date;
-                        model.TotalSum = order.TotalSum;
-                        model.UserId = order.UserId;
-                        model.AmountPaid = Convert.ToInt32(response_bill);
+                        var model = new PayOrderModel
+                        {
+                            Id = order.Id,
+                            Date = order.Date,
+                            TotalSum = order.TotalSum,
+                            UserId = order.UserId,
+                            AmountPaid = Convert.ToInt32(response_bill)
+                        };
                         resultList.Add(model);
                     }
                 }
+                ViewBag.UserId = userid;
                 ViewBag.Orders = resultList;
                 logger.LogInformation($"Number of orders for user {userid.GetValueOrDefault()}: {response.Count}");
                 // return StatusCode(200, response);
                 //return response;
-                return StatusCode(200, response); //JsonConvert.SerializeObject(response);
+                //return StatusCode(200, response); //JsonConvert.SerializeObject(response);
+                return View(resultList);
             }
             else
             {
                 logger.LogCritical("Orders service unavailable");
-                return null;
+                ViewBag.UserId = userid.GetValueOrDefault();
+                ViewBag.Message = "Orders servise unavailable";
+                return PartialView("_GetOrders");
+                //return View();
             }
         }
 
-        [HttpGet("goods")] //получить все товары
-        public async Task<List<WareHouseModel>> GetGoods(int page = 0, int perpage = 0)
+        [HttpGet("{userid}/goods")] //получить все товары
+        public async Task<IActionResult> GetGoods(int? userid, int page = 0, int perpage = 0)
         {
+            ViewBag.UserId = userid;
+            List<OrderModel> response_order = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), 0, 0);
+            if (response_order.Count() > 0)
+                ViewBag.OrderIds = response_order;
+            else
+                ViewBag.OrderIds = null;
             List<WareHouseModel> response = await warehouseService.GetAllInfo(page, perpage);
             if (response != null)
             {
                 //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                return response;
+                return View(response);
+                //return response;
             }
             else
             {
                 logger.LogCritical("Goods service unavailable");
-                return null;
+                ViewBag.Message = "Goods service unavailable";
+                return PartialView("_GetGoods");
+                //return null;
             }
         }
 
@@ -118,24 +146,72 @@ namespace Shop_new.Controllers
         [HttpGet("{userid}/info/{orderid}")] //получить состав заказа
         public async Task<IActionResult> GetOrderUnitsForOrder(int? userid, int? orderid)
         {
+            
             if (userid == null)
-                return StatusCode(400, "Invalid user");
+            {
+                ViewBag.Message = "Invalid User";
+                return PartialView("_GetOrderUnitsForOrder");
+                //return StatusCode(400, "Invalid user");
+            }
             if (orderid == null)
-                return StatusCode(400, "Invalid order");
-;            List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
-            if (response != null)
             {
-                //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                //return response;
-                if (response.Count() > 0)
-                    return StatusCode(200, response);
-                return StatusCode(204, "No ordder units");
+                //return StatusCode(400, "Invalid order");
+                ViewBag.Message = "Invalid order";
+                return PartialView("_GetOrderUnitsForOrder");
             }
-            else
+            ViewBag.UserId = userid.GetValueOrDefault();
+            var response1 = await orderService.GetOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
+            if (response1 != null)
             {
+                ViewBag.Date = response1.Date;
+                ViewBag.OrderId = response1.Id;
+                ViewBag.TotalSum = response1.TotalSum;
+                List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
+                if (response != null)
+                {
+                    //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
+                    //return response;
+                    if (response.Count() > 0)
+                    {
+                        if (response.Count() == 1 && response[0].Count == 0 && response[0].GoodsId == 0 && response[0].OrderId == 0)
+                        {
+                            ViewBag.Message = $"Order {orderid} not found";
+                            return PartialView("_GetOrderUnitsForOrder");
+                        }
+                        var unitlist = new List<GoodsUnitModel>();
+                        foreach (var unit in response)
+                        {
+                            var goodsunit = new GoodsUnitModel
+                            {
+                                Count = unit.Count,
+                                GoodsId = unit.GoodsId
+                            };
+                            var goods = await warehouseService.GetGoodsForId(unit.GoodsId);
+                            if (goods != null)
+                            {
+                                goodsunit.Name = goods.Name;
+                                goodsunit.Price = goods.Price;
+                            }
+                            else
+                            {
+                                goodsunit.Name = "No goods with this ID";
+                                goodsunit.Price = 0;
+                            }
+                            unitlist.Add(goodsunit);
+                        }
+                        //return StatusCode(200, response);
+                        return View(unitlist);
+                    }
+                    ViewBag.Message = "Order is empty";
+                    return PartialView("_GetOrderUnitsForOrder");
+                    //return StatusCode(204, "No ordder units");
+                }
+            }
+
                 logger.LogCritical("Orders service unavailable");
-                return StatusCode (503, "Orders service unavailable")
-            }
+            ViewBag.Message = "Orders service unavailable";
+            return PartialView("_GetOrderUnitsForOrder");
+            //return StatusCode(503, "Orders service unavailable");
         }
 
         //модификация нескольких сервисов.
@@ -190,12 +266,23 @@ namespace Shop_new.Controllers
         }
 
 
-        [HttpPost("{userid}/{orderid}/addorderunit/{goodsid}")] //добавить товар в заказ
+        [HttpPost("{userid}/addorderunit")] //добавить товар в заказ
         public async Task<IActionResult> AddOrderUnit(int? userid, int? orderid, int? goodsid)
         {
+            ViewBag.UserId = userid;
             if (userid == null || orderid == null | goodsid == null)
             {
-                return StatusCode(400, "Parametrs invalid");
+                //return StatusCode(400, "Parametrs invalid");
+                string error_message = "";
+                if (userid == null)
+                    error_message += "User Invalid. ";
+                if (orderid == null)
+                    error_message += "Order invalid. ";
+                if (goodsid == null)
+                    error_message += "Goods invalid. ";
+
+                ViewBag.Message = error_message;
+                return View();
             }
             var response = await orderService.AddOrderUnit(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), goodsid.GetValueOrDefault());
             if (response != null)
@@ -214,32 +301,48 @@ namespace Shop_new.Controllers
                             if (response_2 != null)
                             {
                                 logger.LogInformation($"Added sum to order, response {response_2.StatusCode}");
-                                return Ok();
+                                ViewBag.Message = $"Order unit added to your order {orderid}";
+                                return View();
+                                //return Ok();
                             }
                             else
                             {
                                 logger.LogCritical("Order service unavailable");
-                                return StatusCode(503, "Order service unavailable");
+                                ViewBag.Message = "Order service unavailable";
+                                return View();
+                                //return StatusCode(503, "Order service unavailable");
                                 //return NotFound("Service unavailable");
                             }
                         }
                         else
-                            return StatusCode(400, "Invalid goods");
+                        {
+                            ViewBag.Message = "Invalid goods";
+                            return View();
+                            //return StatusCode(400, "Invalid goods");
+                        }
                     }
                     else
                     {
                         logger.LogCritical("Warehouse service unavailable");
-                        return StatusCode(503, "Goods service unavailable");
+                        ViewBag.Message = "Warehouse service unavailable";
+                        return View();
+                        //return StatusCode(503, "Goods service unavailable");
                         //return NotFound("Service unavailable");
                     }
                 }
                 else
-                    return BadRequest(response.Content?.ReadAsStringAsync()?.Result);
+                {
+                    ViewBag.Message = response.Content?.ReadAsStringAsync()?.Result;
+                    return View();
+                    //return BadRequest(response.Content?.ReadAsStringAsync()?.Result);
+                }
             }
             else
             {
                 logger.LogCritical("Order service unavailable");
-                return StatusCode(503, "Order service unavailable");
+                ViewBag.Message = "Order service unavailable";
+                return View();
+                //return StatusCode(503, "Order service unavailable");
                 //return NotFound("Service unavailable");
             }
 

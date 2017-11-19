@@ -50,6 +50,18 @@ namespace OrderService.Controllers
             return JsonConvert.SerializeObject(resList);
         }
 
+        [HttpGet("{userid}/order/{orderid}")]
+        public async Task<string> GetOrder (int userid, int orderid)
+        {
+            var result = db.Orders.FirstOrDefault(q => q.UserId == userid && q.Id == orderid);
+            if (result != null)
+            {
+               // var order = new Order { Id = result.Id, Date = result.Date, TotalSum = result.TotalSum, UserId = result.UserId };
+                return JsonConvert.SerializeObject(result);
+            }
+            return null;
+        }
+
         [HttpGet("{userid}/info/{orderid}")]
         public async Task<string> GetOrderInfoForUser(int userid, int orderid)
         {
@@ -69,11 +81,11 @@ namespace OrderService.Controllers
                     }
                     return JsonConvert.SerializeObject(list);
                 }
-                return "No units";
+                return null;
             }
             else
             {
-                logger.LogDebug($" bill for order {orderid} not found");
+                logger.LogDebug($" order for order {orderid} not found");
                 return "";
             }
         }
