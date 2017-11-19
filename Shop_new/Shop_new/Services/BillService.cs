@@ -23,7 +23,7 @@ namespace Shop_new.Services
             string response = await httpResponseMessage.Content.ReadAsStringAsync();
             try
             {
-                return JsonConvert.DeserializeObject<string>(response);
+                return response;
             }
             catch
             {

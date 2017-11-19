@@ -9,6 +9,7 @@ using Shop_new.Services;
 using Shop_new.Qeue;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace Shop_new.Controllers
 {
@@ -31,19 +32,41 @@ namespace Shop_new.Controllers
         }
 
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
-        public async Task<List<OrderModel>> GetOrders(int userid, int page = 0, int perpage = 0)
+        public async Task<IActionResult> GetOrders(int? userid, int? page, int? perpage)
         {
-            if (userid == 0)
-                return null;
-            if ((page != 0 && perpage == 0) || (page == 0 && perpage != 0))
-                return null;
+            if (userid == null)
+                return StatusCode(400, "Invalid user"); //null;
+            if ((page != null && perpage == null) || (page == null && perpage != null))
+                return StatusCode(400, "Invalid pages");//null;
 
-            List<OrderModel> response = await orderService.GetOrdersForUser(userid, page, perpage);
+            if (page == null && perpage == null)
+            {
+                page = 0;
+                perpage = 0;
+            }
+            List<OrderModel> response = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), page.GetValueOrDefault(), perpage.GetValueOrDefault());
             if (response != null)
             {
-                logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-               // return StatusCode(200, response);
-                return response;
+                List<PayOrderModel> resultList = new List<PayOrderModel>();
+                foreach (var order in response)
+                {
+                    string response_bill = await billService.GetBillForOrder(order.Id);
+                    if (response_bill != "")
+                    {
+                        var model = new PayOrderModel();
+                        model.Id = order.Id;
+                        model.Date = order.Date;
+                        model.TotalSum = order.TotalSum;
+                        model.UserId = order.UserId;
+                        model.AmountPaid = Convert.ToInt32(response_bill);
+                        resultList.Add(model);
+                    }
+                }
+                ViewBag.Orders = resultList;
+                logger.LogInformation($"Number of orders for user {userid.GetValueOrDefault()}: {response.Count}");
+                // return StatusCode(200, response);
+                //return response;
+                return StatusCode(200, response); //JsonConvert.SerializeObject(response);
             }
             else
             {
@@ -93,18 +116,25 @@ namespace Shop_new.Controllers
 
 
         [HttpGet("{userid}/info/{orderid}")] //получить состав заказа
-        public async Task<List<OrderUnitModel>> GetOrderUnitsForOrder(int userid, int orderid)
+        public async Task<IActionResult> GetOrderUnitsForOrder(int? userid, int? orderid)
         {
-            List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid, orderid);
+            if (userid == null)
+                return StatusCode(400, "Invalid user");
+            if (orderid == null)
+                return StatusCode(400, "Invalid order");
+;            List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
             if (response != null)
             {
                 //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                return response;
+                //return response;
+                if (response.Count() > 0)
+                    return StatusCode(200, response);
+                return StatusCode(204, "No ordder units");
             }
             else
             {
                 logger.LogCritical("Orders service unavailable");
-                return null;
+                return StatusCode (503, "Orders service unavailable")
             }
         }
 
@@ -161,22 +191,26 @@ namespace Shop_new.Controllers
 
 
         [HttpPost("{userid}/{orderid}/addorderunit/{goodsid}")] //добавить товар в заказ
-        public async Task<IActionResult> AddOrderUnit(int userid, int orderid, int goodsid)
+        public async Task<IActionResult> AddOrderUnit(int? userid, int? orderid, int? goodsid)
         {
-            var response = await orderService.AddOrderUnit(userid, orderid, goodsid);
+            if (userid == null || orderid == null | goodsid == null)
+            {
+                return StatusCode(400, "Parametrs invalid");
+            }
+            var response = await orderService.AddOrderUnit(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), goodsid.GetValueOrDefault());
             if (response != null)
             {
                 logger.LogInformation($"Attempt to add order unit, response {response.StatusCode}");
                 if (response.IsSuccessStatusCode)
                 {
-                    var price = await warehouseService.GetGoodsPriceForId(goodsid);
+                    var price = await warehouseService.GetGoodsPriceForId(goodsid.GetValueOrDefault());
                     if (price != null)
                     {
                         if (price != "")
                         {
                             // logger.LogInformation($"Got price from warehouse, response {response.StatusCode}");
                             int price_sum = Convert.ToInt32(price.ToString());
-                            var response_2 = await orderService.AddPrice(userid, orderid, price_sum);
+                            var response_2 = await orderService.AddPrice(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), price_sum);
                             if (response_2 != null)
                             {
                                 logger.LogInformation($"Added sum to order, response {response_2.StatusCode}");
@@ -307,8 +341,11 @@ namespace Shop_new.Controllers
         [HttpDelete("{userid}/{orderid}/delete")] //удалить заказ
         public async Task<IActionResult> RemoveOrder(int userid, int orderid)
         {
-            if (userid == 0 || orderid == 0)
-                return StatusCode(400, "Bad Request");
+            if (userid == 0 )
+                return StatusCode(400, "Invalid User");
+            if (orderid == 0)
+                return StatusCode(400, "Invalid Order");
+            
             var response = await orderService.RemoveOrder(userid, orderid);
             if (response != null)
             {
@@ -344,7 +381,7 @@ namespace Shop_new.Controllers
                     //return StatusCode(503, "Bill service unavailable");
                     //return NotFound("Service unavailable");
                 }
-                return StatusCode(400, "Bad Request");
+                return StatusCode(400, $"There is not order with id {orderid}");
             }
             logger.LogCritical("Order service unavailable");
             return StatusCode(503, "Order service unavailable");

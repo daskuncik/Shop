@@ -31,12 +31,12 @@ namespace OrderService.Controllers
             logger.LogDebug($"Retriving all orders for user {userid}");
             var result = db.Orders.Where(s => s.UserId == userid);
             logger.LogDebug($"Found {result.Count()} orders for user {userid}");
-            if (page != 0 && perpage != 0)
+            if (page > 0 && perpage > 0)
             {
                 logger.LogDebug($"Skipping {page * perpage} entities due to pagination");
                 result = result.Skip(page * perpage);
             }
-            if (perpage != 0)
+            if (perpage > 0)
             {
                 logger.LogDebug($"Taking at max {perpage} entities");
                 result = result.Take(perpage);

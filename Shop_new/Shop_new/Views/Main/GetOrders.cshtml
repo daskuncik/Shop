@@ -1,0 +1,45 @@
+﻿@model IEnumerable<Shop_new.Models.PayOrderModel>
+@{
+    Layout = "_Layout";
+}
+
+@if (ViewBag.Value != null)
+{
+    <div style="border-top: 40px">
+        <font color="red"> В корзине <b>@ViewBag.Value.ToString()</b> элементов</font>
+    </div>
+}
+
+<table style="margin-top: 40px" class="table" border="1">
+    <tr>
+        <th>
+            <p>Сумма заказа</p>
+        </th>
+        <th>
+            <p>Сколько оплачено</p>
+        </th>
+        <th>
+            <p>Дата составления заказа</p>
+        </th>
+        <th>
+            <p></p>
+        </th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <a href="@item.UserId/info/@item.Id">
+                <td>
+                    <strong><em>@item.TotalSum.ToString()</em></strong>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AmountPaid)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Date)
+                </td>
+            </a>
+        </tr>
+    }
+</table>
+

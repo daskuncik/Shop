@@ -29,7 +29,7 @@ namespace BillingService.Controllers
             if (result != null)
             {
                 logger.LogDebug($"Found bill for order {orderid} with Amount paid = {result.AmmountPaid}");
-                string str = $"AmountPaid: {result.AmmountPaid}";
+                string str = result.AmmountPaid.ToString();
                 return str;
             }
             else
