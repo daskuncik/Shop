@@ -82,7 +82,7 @@ namespace Shop_new.Controllers
                 // return StatusCode(200, response);
                 //return response;
                 //return StatusCode(200, response); //JsonConvert.SerializeObject(response);
-                return View(resultList);
+                return View("GetOrders", resultList);
             }
             else
             {
@@ -161,67 +161,80 @@ namespace Shop_new.Controllers
             }
             ViewBag.UserId = userid.GetValueOrDefault();
             var response1 = await orderService.GetOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
-            if (response1 != null)
+            if (response1 == null)
             {
-                ViewBag.Date = response1.Date;
-                ViewBag.OrderId = response1.Id;
-                ViewBag.TotalSum = response1.TotalSum;
-                List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
-                if (response != null)
-                {
-                    //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                    //return response;
-                    if (response.Count() > 0)
-                    {
-                        if (response.Count() == 1 && response[0].Count == 0 && response[0].GoodsId == 0 && response[0].OrderId == 0)
-                        {
-                            ViewBag.Message = $"Order {orderid} not found";
-                            return PartialView("_GetOrderUnitsForOrder");
-                        }
-                        var unitlist = new List<GoodsUnitModel>();
-                        foreach (var unit in response)
-                        {
-                            var goodsunit = new GoodsUnitModel
-                            {
-                                Count = unit.Count,
-                                GoodsId = unit.GoodsId
-                            };
-                            var goods = await warehouseService.GetGoodsForId(unit.GoodsId);
-                            if (goods != null)
-                            {
-                                goodsunit.Name = goods.Name;
-                                goodsunit.Price = goods.Price;
-                            }
-                            else
-                            {
-                                goodsunit.Name = "No goods with this ID";
-                                goodsunit.Price = 0;
-                            }
-                            unitlist.Add(goodsunit);
-                        }
-                        //return StatusCode(200, response);
-                        return View(unitlist);
-                    }
-                    ViewBag.Message = "Order is empty";
-                    return PartialView("_GetOrderUnitsForOrder");
-                    //return StatusCode(204, "No ordder units");
-                }
-            }
-
                 logger.LogCritical("Orders service unavailable");
-            ViewBag.Message = "Orders service unavailable";
-            return PartialView("_GetOrderUnitsForOrder");
+                ViewBag.Message = "Orders service unavailable";
+                return PartialView("_GetOrderUnitsForOrder");
+            }
+            if (response1.Id == 0 && response1.UserId == 0 && response1.TotalSum == 0)
+            {
+                ViewBag.Message = $"Order {orderid} not found";
+                return PartialView("_GetOrderUnitsForOrder");
+            }
+            ViewBag.Date = response1.Date;
+            ViewBag.OrderId = response1.Id;
+            ViewBag.TotalSum = response1.TotalSum;
+            List<OrderUnitModel> response = await orderService.GetUnitsForOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
+            if (response == null)
+            {
+                ViewBag.Message = "Orders service unavailable";
+                return PartialView("_GetOrderUnitsForOrder");
+            }
+                        //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
+                        //return response;
+               // if (response.Count() > 0)
+               // {
+            if (response.Count() == 1 && response[0].Count == 0 && response[0].GoodsId == 0 && response[0].OrderId == 0)
+            {
+                ViewBag.Message = "Order is empty";
+                return PartialView("_GetOrderUnitsForOrder");
+            }
+            var unitlist = new List<GoodsUnitModel>();
+            foreach (var unit in response)
+            {
+                var goodsunit = new GoodsUnitModel
+                {
+                    Count = unit.Count,
+                    GoodsId = unit.GoodsId
+                };
+                var goods = await warehouseService.GetGoodsForId(unit.GoodsId);
+                if (goods != null)
+                {
+                    goodsunit.Name = goods.Name;
+                    goodsunit.Price = goods.Price;
+                }
+                else
+                {
+                    goodsunit.Name = "No goods with this ID";
+                    goodsunit.Price = 0;
+                }
+                unitlist.Add(goodsunit);
+            }
+            //return StatusCode(200, response);
+            return View(unitlist);
+                //}
+                    //}
+               //}
+                
+             //return StatusCode(204, "No ordder units");   
             //return StatusCode(503, "Orders service unavailable");
         }
 
         //модификация нескольких сервисов.
         //откат
         [HttpPost("{userid}/addorder")] //добавить заказ
-        public async Task<IActionResult> AddOrder(int userid)
+        public async Task<IActionResult> AddOrder(int? userid)
         {
-            if (userid == 0)
-                return StatusCode(400, "Invalid User");
-            var response = await orderService.AddOrder(userid);
+            if (userid == null)
+            {
+                ViewBag.Message = "Invalid User";
+                return View();
+                //return StatusCode(400, "Invalid User");
+            }
+
+            ViewBag.UserId = userid;
+            var response = await orderService.AddOrder(userid.GetValueOrDefault());
             var aa = response.Content.ReadAsStringAsync().Result;
             if (response != null)
             {
@@ -236,32 +249,47 @@ namespace Shop_new.Controllers
                         if (response_2.IsSuccessStatusCode)
                         {
                             logger.LogInformation($"Bill for order {orderid} successful created");
-                            return Ok();
+                            ViewBag.Message = "Order & Bill successfully created";
+                            return View();
+                            //return Ok();
                         }
                         //else
-                        var response_3 = await orderService.RemoveOrder(userid, orderid);
-                        return StatusCode(503, response.Content?.ReadAsStringAsync()?.Result);
+                        var response_3 = await orderService.RemoveOrder(userid.GetValueOrDefault(), orderid);
+                        ViewBag.Message = "Error during creating bill. Order wasn't created";
+                        return View();
+                        //return StatusCode(503, response.Content?.ReadAsStringAsync()?.Result);
                         //return BadRequest(response_2.Content?.ReadAsStringAsync()?.Result);
                     }
                     else
                     {
-                        var response_3 = await orderService.RemoveOrder(userid, orderid);
+                        var response_3 = await orderService.RemoveOrder(userid.GetValueOrDefault(), orderid);
                         if (response_3 != null)
-                            return StatusCode(503, $"Bill servise unavailable. Rollback status for removig order: {(response_3.IsSuccessStatusCode ? "ok" : "failed")}");
-
-                        return StatusCode(400, $"Bill servise unavailable. Order service unavailable: cann't remove created order"); 
+                        {
+                            ViewBag.Message = $"Bill servise unavailable. Rollback status for removig order: {(response_3.IsSuccessStatusCode ? "ok" : "failed")}";
+                            return View();
+                            //return StatusCode(503, $"Bill servise unavailable. Rollback status for removig order: {(response_3.IsSuccessStatusCode ? "ok" : "failed")}");
+                        }
+                        ViewBag.Message = $"Bill servise unavailable. Order service unavailable: cann't remove created order";
+                        return View();
+                        //return StatusCode(400, 
                         // logger.LogCritical("Bills service unavailable");
                         //return NotFound("Service unavailable");
                     }
                 }
                 else
-                    return StatusCode(503, response.Content?.ReadAsStringAsync()?.Result);
+                {
+                    ViewBag.Message = "Error during creating of order";
+                    return View();
+                    //return StatusCode(503, response.Content?.ReadAsStringAsync()?.Result);
                     //return BadRequest(response.Content?.ReadAsStringAsync()?.Result);
+                }
             }
             else
             {
                 logger.LogCritical("Orders service unavailable");
-                return NotFound("Service unavailable");
+                ViewBag.Message = "Order Service unavailable";
+                return View();
+                //return NotFound("Service unavailable");
             }
         }
 
@@ -348,33 +376,92 @@ namespace Shop_new.Controllers
 
         }
 
+        [HttpGet("{userid}/addpayment")] //добавить платеж в заказ (форма для внесения суммы)
+        public async Task<IActionResult> AddPayment(int? userid, int? orderid)
+        {
+            string message = "";
+            if (userid == null)
+                message += "Invalid User";
+            if (orderid == null)
+                message += "Invalid order";
+            if (message == "")
+                ViewBag.Message = $"Enter the amount for order {orderid.GetValueOrDefault()}";
+            else
+                ViewBag.Message = message;
+            ViewBag.UserId = userid.GetValueOrDefault();
+            ViewBag.OrderId = orderid.GetValueOrDefault();
+            return View();
+        }
+
         //Читает 1 сервис, модифицирует другое
         [HttpPost("{userid}/addpayment")] //добавить платеж в заказ
-        public async Task<IActionResult> AddPayment(int userid, int orderid, int sum)
+        public async Task<IActionResult> AddPayment(int? userid, int? orderid, int? sum)
         {
             if (userid == 0 || orderid == 0 || sum == 0)
-                return StatusCode(400, "Bad Request");
-            var orderExists = await orderService.CheckIfOrderExists(new UserOrderModel { useridId = userid, orderId = orderid });
-            logger.LogInformation($"Order response: {orderExists?.StatusCode}");
-            if (orderExists == null)
-                return StatusCode(503, "Order service unavailable");
-   
-            if (!orderExists.IsSuccessStatusCode)
-                    return StatusCode(400, "Order doesn't exists");
+            {
+                string message = "";
+                if (userid == null)
+                    message += "Invalid User. ";
+                else
+                    ViewBag.UserId = userid;
+
+                if (orderid == null)
+                    message += "Invalid order. ";
+
+                if (sum == null)
+                    message += "Invalid Sum.";
+                //return StatusCode(400, "Bad Request");
+            }
+            ViewBag.UserId = userid;
+            ViewBag.OrderId = orderid;
+            //var orderExists = await orderService.CheckIfOrderExists(new UserOrderModel { useridId = userid, orderId = orderid });
+            var order = await orderService.GetOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
+            //logger.LogInformation($"Order response: {orderExists?.StatusCode}");
+            if (order == null)
+            {
+                ViewBag.Message = "Order service unavailable";
+                return PartialView("_AddPayment");
+                //return StatusCode(503, "Order service unavailable");
+            }
+
+            if (order.Id==0 && order.TotalSum == 0 & order.UserId == 0)
+            {
+                ViewBag.Message = "Order doesn't exist";
+                return PartialView("_AddPayment");
+                //return StatusCode(400, "Order doesn't exists");
+            }
             //return NotFound("Order doesn't exists");
 
-            var response = await billService.GetBillForOrder(orderid);
+            var response = await billService.GetBillForOrder(orderid.GetValueOrDefault());
             if (response != null)
             {
                 if (response != "")
                 {
-                    var response_2 = await billService.AddPaymentToBill(orderid, sum);
+                    var response_2 = await billService.AddPaymentToBill(orderid.GetValueOrDefault(), sum.GetValueOrDefault(), order.TotalSum);
                     if (response_2 != null)
                     {
                         if (response_2.IsSuccessStatusCode)
-                            return Ok();
-                        else
-                            return BadRequest(response_2.Content?.ReadAsStringAsync()?.Result);
+                        {
+                            ViewBag.Message = "You added payment success";
+                            return PartialView("_AddPayment");
+                            //return Ok();
+                        }
+                        
+                        if (response_2.StatusCode == System.Net.HttpStatusCode.Accepted)
+                        {
+                            ViewBag.Message = "Your order is successfuly closed";
+                            //сделать здесь декремент тех вещей на складе, которые есть в этом заказе
+                            return PartialView("_AddPayment");
+                        }
+                            //return BadRequest(response_2.Content?.ReadAsStringAsync()?.Result);
+                        if (response_2.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                        {
+                            ViewBag.Message = "The amount paid is more than necessary for an order. Please correct your sum";
+                            return PartialView("_AddPayment");
+                        }
+                        ViewBag.Message = $"Bill for order {orderid.GetValueOrDefault()} not found";
+                        return PartialView("_AddPayment");
+
                     }
                     else
                     {
@@ -385,9 +472,11 @@ namespace Shop_new.Controllers
                 }
                 else
                 {
-                    logger.LogCritical($"Bill for order {orderid} not");
-                    return StatusCode(400, $"Bill for order {orderid} not");
-                    //return BadRequest();
+                    ViewBag.Message = $"Bill for order {orderid.GetValueOrDefault()} not found";
+                    return PartialView("_AddPayment");
+                    // logger.LogCritical($"Bill for order {orderid} not");
+                    //return StatusCode(400, $"Bill for order {orderid} not");
+                   // //return BadRequest();
                 }
             }
             else
@@ -397,7 +486,7 @@ namespace Shop_new.Controllers
                 {
                 using (var client = new HttpClient())
                 {
-                        billid = await billService.GetBillForOrder(orderid);
+                        billid = await billService.GetBillForOrder(orderid.GetValueOrDefault());
                         if (billid != null)
                             return true;
                             
@@ -406,19 +495,35 @@ namespace Shop_new.Controllers
                 });
                 if (billid != "")
                 {
-                    var response_4 = await billService.AddPaymentToBill(orderid, sum);
+                    var response_4 = await billService.AddPaymentToBill(orderid.GetValueOrDefault(), sum.GetValueOrDefault(), order.TotalSum);
                     if (response_4 != null)
                     {
                         if (response_4.IsSuccessStatusCode)
-                            return Ok();
-                        return StatusCode(400, "BadRequest");
+                        {
+                            ViewBag.Message = "You added payment success";
+                            return PartialView("_AddPayment");
+                            //return Ok();
+                        }
+                        if (response_4.StatusCode == System.Net.HttpStatusCode.Accepted)
+                        {
+                            ViewBag.Message = "Your order is successfuly closed";
+                            //сделать здесь декремент тех вещей на складе, которые есть в этом заказе
+                            return PartialView("_AddPayment");
+                        }
+                        if (response_4.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                        {
+                            ViewBag.Message = "The amount paid is more than necessary for an order. Please correct your sum";
+                            return PartialView("_AddPayment");
+                        }
+                        ViewBag.Message = $"Bill for order {orderid.GetValueOrDefault()} not found";
+                        return PartialView("_AddPayment");
                     }
                     HttpResponseMessage response_5 = null;
                     MyQeue.Retry(async () =>
                     {
                         using (var client = new HttpClient())
                         {
-                            response_5 = await billService.AddPaymentToBill(orderid, sum);
+                            response_5 = await billService.AddPaymentToBill(orderid.GetValueOrDefault(), sum.GetValueOrDefault(), order.TotalSum);
                             if (response_5 != null)
                                 return true;
 
@@ -426,16 +531,32 @@ namespace Shop_new.Controllers
                         }
                     });
                     if (response_5.IsSuccessStatusCode)
-                        return Ok();
-                    return StatusCode(400, "Bad Request for add bill");
+                    {
+                        ViewBag.Message = "You added payment success";
+                        return PartialView("_AddPayment");
+                    }
+                    //return StatusCode(400, "Bad Request for add bill");
+                    if (response_5.StatusCode == System.Net.HttpStatusCode.Accepted)
+                    {
+                        ViewBag.Message = "Your order is successfuly closed";
+                        //сделать здесь декремент тех вещей на складе, которые есть в этом заказе
+                        return PartialView("_AddPayment");
+                    }
+                    if (response_5.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        ViewBag.Message = "The amount paid is more than necessary for an order. Please correct your sum";
+                        return PartialView("_AddPayment");
+                    }
+                    ViewBag.Message = $"Bill for order {orderid.GetValueOrDefault()} not found";
+                    return PartialView("_AddPayment");
 
                 }
-                return StatusCode(400, "Bad Request for bill");
-                //logger.LogCritical("Bill service unavailable");
-                //return NotFound("Service unavailable");
+                //return StatusCode(400, "Bad Request for bill");
+                ViewBag.Message = $"Bill for order {orderid.GetValueOrDefault()} not found";
+                return PartialView("_AddPayment");
             }
             return StatusCode(503, "Services status: " +
-                    $"Order: {(orderExists != null ? "online" : "offline")};" +
+                    $"Order: {(order != null ? "online" : "offline")};" +
                     $"Bill: {(response != null ? "online" : "offline")};");
         }
 
@@ -503,51 +624,93 @@ namespace Shop_new.Controllers
 
         //откат действий
         [HttpDelete("{userid}/{orderid}/deleteunit")] //удалить товар из заказа
-        public async Task<IActionResult> RemoveOrderUnit(int userid, int orderid, int goodsid)
+        public async Task<IActionResult> RemoveOrderUnit(int? userid, int? orderid, int? goodsid)
         {
+            ViewData["Title"] = "Remove unit";
             if (userid == 0 || orderid == 0 || goodsid == 0)
-                return StatusCode(400, "Bad Request");
-            var response = await orderService.RemoveOrderUnit(orderid, goodsid);
-            if (response != null)
             {
-                logger.LogInformation($"Attempt to remove order {orderid}, response {response.StatusCode}");
-                if (response.IsSuccessStatusCode)
+                string message = "";
+                if (userid == null)
                 {
-                    var price_resp = await warehouseService.GetGoodsPriceForId(goodsid);
-                    if (price_resp != null)
-                    {
-                        if (price_resp != "")
-                        {
-                            var price = Convert.ToInt32(price_resp);
-                            var subSum = await orderService.SubTotalSum(userid, orderid, price);
-                            if (subSum != null && subSum.IsSuccessStatusCode)
-                                return Ok();
-                            else
-                            {
-                                var restore_order = await orderService.AddOrderUnit(userid, orderid, goodsid);
-                                if (restore_order != null && restore_order.IsSuccessStatusCode)
-                                    return StatusCode(503, $"Subtraction Error. Rollback order unit in order {orderid}");
-                                return StatusCode(503, "Order service rollback error");
-                            }
-
-                        }
-                        else
-                            return StatusCode(400, $"No goods {goodsid}");
-                    }
-                    else
-                    {
-                        var restore_order = await orderService.AddOrderUnit(userid, orderid, goodsid);
-                        if (restore_order != null)
-                            if (restore_order.IsSuccessStatusCode)
-                                return StatusCode(503, $"Goods service unavailable. Rollback order unit in order {orderid}");
-                    }
-                            return Ok();
-
+                    ViewBag.UserId = null;
+                    message += "Invalid User. ";
                 }
-                return BadRequest(response.Content.ReadAsStringAsync()?.Result);
+                else
+                    ViewBag.UserId = userid;
+                if (orderid == null)
+                    message += "Invalid order. ";
+                if (goodsid == null)
+                    message += "Invalid goods.";
+                ViewBag.Message = message;
+                return PartialView("_GetOrders");
             }
-            logger.LogCritical("Order service unavailable");
-            return NotFound("Service unavailable");
+
+            ViewBag.UserId = userid;
+            ViewBag.OrderId = orderid;
+            ViewBag.GoodsId = goodsid;
+            var response = await orderService.RemoveOrderUnit(orderid.GetValueOrDefault(), goodsid.GetValueOrDefault());
+            if (response == null)
+            {
+                ViewBag.Message = "Order service unavailable";
+                return View();
+            }
+            logger.LogInformation($"Attempt to remove order {orderid.GetValueOrDefault()}, response {response.StatusCode}");
+            if (response.IsSuccessStatusCode)
+            {
+                var price_resp = await warehouseService.GetGoodsPriceForId(goodsid.GetValueOrDefault());
+                if (price_resp == null)
+                {
+                    var restore_order = await orderService.AddOrderUnit(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), goodsid.GetValueOrDefault());
+                    if (restore_order == null)
+                    {
+                        ViewBag.Message = $"Order service unavailable. Rollback error for order unit in order {orderid.GetValueOrDefault()}";
+                        return View();
+                    }
+                    if (restore_order.IsSuccessStatusCode)
+                    {
+                        ViewBag.Message = $"Goods service unavailable. Rollback order unit in order {orderid.GetValueOrDefault()}";
+                        return View();
+                    }
+                }
+                //return StatusCode(503, $"Goods service unavailable. Rollback order unit in order {orderid}");
+
+                if (price_resp == "")
+                {
+                    ViewBag.Message = $"No goods {goodsid.GetValueOrDefault()}";
+                    return View();
+                }
+                var price = Convert.ToInt32(price_resp);
+                var subSum = await orderService.SubTotalSum(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), price);
+                if (subSum == null)
+                {
+                    logger.LogCritical("Order service unavailable");
+                    ViewBag.Message = "Order service unavailable";
+                    return View();
+                    //return NotFound("Service unavailable");
+                }
+                if (subSum.IsSuccessStatusCode)
+                {
+                    ViewBag.Message = "Removing was successful";
+                    return View();
+                }
+                else
+                {
+                    var restore_order = await orderService.AddOrderUnit(userid.GetValueOrDefault(), orderid.GetValueOrDefault(), goodsid.GetValueOrDefault());
+                    if (restore_order != null && restore_order.IsSuccessStatusCode)
+                    {
+                        ViewBag.Message = $"Subtraction Error. Rollback order unit in order {orderid.GetValueOrDefault()}";
+                        return View();
+                        //return StatusCode(503, $"Subtraction Error. Rollback order unit in order {orderid}");
+                    }
+                    ViewBag.Message = $"Order service rollback error";
+                    return View();
+                    //return StatusCode(503, "Order service rollback error");
+                }
+                //}
+            }
+            ViewBag.Message = "Removing Error";
+            return View();
+            
         }
 
 

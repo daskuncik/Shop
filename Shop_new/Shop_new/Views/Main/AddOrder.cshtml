@@ -1,0 +1,16 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<h4>@ViewBag.Message</h4>
+
+@if (ViewBag.UserId)
+{
+    <form method="get" action="@ViewBag.UserId.ToString()/orders">
+        <button>К заказам</button>
+    </form>
+    <form method="get" action="@ViewBag.UserId.ToString()/goods">
+        <button>К товарам</button>
+    </form>
+}
+

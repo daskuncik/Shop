@@ -54,7 +54,13 @@ namespace Shop_new.Services
                 var aa = JsonConvert.DeserializeObject<OrderModel>(response);
                 if (aa != null)
                     return aa;
-                return null;
+                var model = new OrderModel()
+                {
+                    Id = 0,
+                    UserId = 0,
+                    TotalSum = 0
+                };
+                return model;
             }
             catch
             {

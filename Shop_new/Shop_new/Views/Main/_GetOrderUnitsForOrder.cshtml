@@ -1,5 +1,14 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
+    Layout = "_Layout";
+}
+
+<h4>@ViewBag.Message</h4>
+
+@if (ViewBag.UserId != null)
+{
+    <form  method="get" asp-route="ViewBag.UserId.ToString()/orders">
+        <button>К заказам</button>
+    </form>
+        
+    <li><a asp-area="" asp-controller="Main" asp-action="GetOrders">Orders</a></li>
 }

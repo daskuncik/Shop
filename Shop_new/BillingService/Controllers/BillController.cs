@@ -83,18 +83,29 @@ namespace BillingService.Controllers
 
         //внести сумму для заказа
         [HttpPost("{orderid}/pay")]
-        public async Task<IActionResult> AddPaid([FromRoute]int orderid, int sum)
+        public async Task<IActionResult> AddPaid([FromRoute]int orderid, int sum, int controlSum)
         {
             logger.LogDebug($"Adding aid for order {orderid}");
             var bill = db.Billings.FirstOrDefault(q => q.UserId == orderid);
             if (bill != null)
             {
-                bill.AmmountPaid += sum;
-                db.SaveChanges();
-                return Ok();
+                if (bill.AmmountPaid + sum <= controlSum)
+                {
+                    if (bill.AmmountPaid+sum == controlSum)
+                    {
+                        bill.AmmountPaid += sum;
+                        db.SaveChanges();
+                        return Accepted(); //вся сумма внесена, заказ закрыть
+                    }
+                    bill.AmmountPaid += sum;
+                    db.SaveChanges();
+
+                    return Ok();
+                }
+                return BadRequest();
             }
             logger.LogWarning($"Bill for order {orderid} not found");
-            return BadRequest();
+            return NotFound();
         }
 
 

@@ -70,11 +70,11 @@ namespace Shop_new.Services
         }
 
 
-        public async Task<HttpResponseMessage> AddPaymentToBill(int orderid, int sum)
+        public async Task<HttpResponseMessage> AddPaymentToBill(int orderid, int sum, int control)
         {
             try
             {
-                return await PostForm($"{orderid}/pay", new Dictionary<string, string>() { { "sum", sum.ToString() } });
+                return await PostForm($"{orderid}/pay", new Dictionary<string, string>() { { "sum", sum.ToString() }, { "controlSum", control.ToString() } });
             }
             catch
             {
