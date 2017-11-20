@@ -221,6 +221,7 @@ namespace Shop_new.Controllers
             //return StatusCode(503, "Orders service unavailable");
         }
 
+
         //модификация нескольких сервисов.
         //откат
         [HttpPost("{userid}/addorder")] //добавить заказ
@@ -559,26 +560,40 @@ namespace Shop_new.Controllers
                     $"Order: {(order != null ? "online" : "offline")};" +
                     $"Bill: {(response != null ? "online" : "offline")};");
         }
-
+        
 
         //с очередью
-        [HttpDelete("{userid}/{orderid}/delete")] //удалить заказ
-        public async Task<IActionResult> RemoveOrder(int userid, int orderid)
+        [HttpPost("{userid}/{orderid}/delete")] //удалить заказ
+        public async Task<IActionResult> RemoveOrder(int? userid, int? orderid)
         {
-            if (userid == 0 )
-                return StatusCode(400, "Invalid User");
-            if (orderid == 0)
-                return StatusCode(400, "Invalid Order");
+            string message = "";
+            if (userid == null)
+                message += "Invalid User";
+            //return StatusCode(400, "Invalid User");
+            if (orderid == null)
+                message += "Invalid Order";
+            //return StatusCode(400, "Invalid Order");
+            if (message != "")
+            {
+                ViewBag.Message = message;
+                return View();
+            }
+            ViewBag.UserId = userid;
+            ViewBag.OrderId = orderid;
             
-            var response = await orderService.RemoveOrder(userid, orderid);
+            var response = await orderService.RemoveOrder(userid.GetValueOrDefault(), orderid.GetValueOrDefault());
             if (response != null)
             {
-                logger.LogInformation($"Attempt to remove order {orderid}, response {response.StatusCode}");
+                logger.LogInformation($"Attempt to remove order {orderid.GetValueOrDefault()}, response {response.StatusCode}");
                 if (response.IsSuccessStatusCode)
                 {
-                    var response_2 = await billService.RemoveBillByOrder(orderid);
+                    var response_2 = await billService.RemoveBillByOrder(orderid.GetValueOrDefault());
                     if (response_2 != null && response_2.IsSuccessStatusCode)
-                        return Ok();
+                    {
+                        ViewBag.Message = $"Order {orderid.GetValueOrDefault()} & bill was successfully removed";
+                        return View();
+                        //return Ok();
+                    }
 
                     MyQeue.Retry(async () =>
                     {
@@ -586,7 +601,7 @@ namespace Shop_new.Controllers
                         {// try catch здесь
                             try
                             {
-                                var response_3 = await billService.RemoveBillByOrder(orderid);
+                                var response_3 = await billService.RemoveBillByOrder(orderid.GetValueOrDefault());
                                 if (response_3 != null)
                                 return true;
                                 return false;
@@ -597,18 +612,22 @@ namespace Shop_new.Controllers
                             }
                         }
                     });
-                    return StatusCode(503, "Services status: " +
+                    ViewBag.Message = "Services status: " +
                         $"Order: {(response != null ? "online" : "offline")};   " +
-                        $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}");
+                        $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}";
+                    //return StatusCode(503, "Services status: " +
+                       // $"Order: {(response != null ? "online" : "offline")};   " +
+                       // $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}");
 
-                    //logger.LogCritical("Bill service unavailable");
-                    //return StatusCode(503, "Bill service unavailable");
-                    //return NotFound("Service unavailable");
                 }
-                return StatusCode(400, $"There is not order with id {orderid}");
+                ViewBag.Message = $"There is not order with id {orderid.GetValueOrDefault()}";
+                return View();
+                //return StatusCode(400, $"There is not order with id {orderid}");
             }
             logger.LogCritical("Order service unavailable");
-            return StatusCode(503, "Order service unavailable");
+            //return StatusCode(503, "Order service unavailable");
+            ViewBag.Message = "Order service unavailable";
+            return View();
         }
 
         [HttpDelete("{orderid}/deletebill")] //удалить счет

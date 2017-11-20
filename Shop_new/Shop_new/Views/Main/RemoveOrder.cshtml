@@ -1,0 +1,10 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<h4>@ViewBag.Message</h4>
+
+<form method="get" action="~/Main/GetOrders">
+    <input type="hidden" name="userid" value="@ViewBag.UserId" />
+    <input type="submit" value="Orders" />
+</form> 

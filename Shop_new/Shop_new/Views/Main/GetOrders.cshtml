@@ -11,9 +11,13 @@
 }
 -->
 
-<form method="post" action="@ViewBag.UserId.ToString()/addorder" >
-    <button>Создать заказ</button>
+
+
+<form method="post" action="~/Main/AddOrder">
+    <input type="hidden" name="userid" value="@ViewBag.UserId" />
+    <input type="submit" value="Создать заказ" />
 </form> 
+
 
 <table style="margin-top: 40px" class="table" border="1">
     <tr>
@@ -26,11 +30,15 @@
         <th>
             <p>Дата составления заказа</p>
         </th>
+        <th>
+            <p>Действия</p>
+        </th>
     </tr>
     @foreach (var item in Model)
     {
         <!--<a href="item.UserId/info/item.Id"> -->
-            <tr onclick="window.location.href='@item.UserId.ToString()/info/@item.Id'; return false">
+            <!--<tr onclick="window.location.href='item.UserId.ToString()/info/item.Id'; return false"> -->
+        <tr>
 
                 <td>
                     <strong><em>@item.TotalSum.ToString()</em></strong>
@@ -40,6 +48,21 @@
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Date)
+                </td>
+                <td>
+                    <form method="get" action="/@item.UserId.ToString()/info/@item.Id.ToString()">
+                        <p>
+                            <input type="submit" value="Details">
+                        </p>
+                    </form>
+                    <form method="post" action="/@ViewBag.UserId.ToString()/@item.Id.ToString()/delete">
+                        <p>
+                            <!--<input type="hidden" name="date" value="aa" /> -->
+                            <input type="submit" value="Delete">
+                            
+                            <!--<button type="submit">Delete</button> -->
+                        </p>
+                    </form>
                 </td>
 
             </tr>
