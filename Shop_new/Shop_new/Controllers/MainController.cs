@@ -63,6 +63,7 @@ namespace Shop_new.Controllers
                 foreach (var order in response)
                 {
                     string response_bill = await billService.GetBillForOrder(order.Id);
+                    
                     if (response_bill != "")
                     {
                         var model = new PayOrderModel
@@ -71,8 +72,13 @@ namespace Shop_new.Controllers
                             Date = order.Date,
                             TotalSum = order.TotalSum,
                             UserId = order.UserId,
-                            AmountPaid = Convert.ToInt32(response_bill)
+                            //AmountPaid = Convert.ToInt32(response_bill)
+
                         };
+                        if (response_bill == null)
+                            model.AmountPaid = -1;
+                        else
+                            model.AmountPaid = Convert.ToInt32(response_bill);
                         resultList.Add(model);
                     }
                 }
@@ -210,6 +216,17 @@ namespace Shop_new.Controllers
                     goodsunit.Price = 0;
                 }
                 unitlist.Add(goodsunit);
+            }
+
+            var bill = await billService.GetBillForOrder(orderid.GetValueOrDefault());
+            if (bill == null)
+                ViewBag.Bill = "Bill Service unavailable";
+            else
+            {
+                if (bill != "")
+                    ViewBag.Bill = "You paid: " + bill;
+                else
+                    ViewBag.Bill = "Invalid Bill";
             }
             //return StatusCode(200, response);
             return View(unitlist);
@@ -603,7 +620,7 @@ namespace Shop_new.Controllers
                             {
                                 var response_3 = await billService.RemoveBillByOrder(orderid.GetValueOrDefault());
                                 if (response_3 != null)
-                                return true;
+                                    return true;
                                 return false;
                             }
                             catch
@@ -615,13 +632,17 @@ namespace Shop_new.Controllers
                     ViewBag.Message = "Services status: " +
                         $"Order: {(response != null ? "online" : "offline")};   " +
                         $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}";
+                    return View();
                     //return StatusCode(503, "Services status: " +
-                       // $"Order: {(response != null ? "online" : "offline")};   " +
-                       // $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}");
+                    // $"Order: {(response != null ? "online" : "offline")};   " +
+                    // $"Bill: {(response_2 != null ? "online" : "offline")}; Status: {response_2?.StatusCode}");
 
                 }
-                ViewBag.Message = $"There is not order with id {orderid.GetValueOrDefault()}";
-                return View();
+                else
+                {
+                    ViewBag.Message = $"There is not order with id {orderid.GetValueOrDefault()}";
+                    return View();
+                }
                 //return StatusCode(400, $"There is not order with id {orderid}");
             }
             logger.LogCritical("Order service unavailable");
@@ -642,7 +663,7 @@ namespace Shop_new.Controllers
         }
 
         //откат действий
-        [HttpDelete("{userid}/{orderid}/deleteunit")] //удалить товар из заказа
+        [HttpPost("{userid}/{orderid}/deleteunit")] //удалить товар из заказа
         public async Task<IActionResult> RemoveOrderUnit(int? userid, int? orderid, int? goodsid)
         {
             ViewData["Title"] = "Remove unit";

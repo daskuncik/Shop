@@ -6,11 +6,11 @@
 
 @if (ViewBag.UserId != null)
 {
-<form method="get" action="@ViewBag.UserId.ToString()/orders">
-    <button>К заказам</button>
+<form method="get" action="/@ViewBag.UserId.ToString()/orders">
+    <input type="submit" value="To Orders" />
 </form> 
 
-<form method="get" action="@ViewBag.UserId.ToString()/goods">
-    <button>К товарам</button>
+<form method="get" action="/@ViewBag.UserId.ToString()/goods">
+    <input type="submit" value="To Goods" />
 </form>
 }

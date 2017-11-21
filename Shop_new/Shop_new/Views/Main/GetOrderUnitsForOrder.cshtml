@@ -13,7 +13,13 @@
     </label>
 </p>
 
-<form method="get" action="@ViewBag.UserId.ToString()/addpayment">
+<p style="text-align:end">
+    <label style="text-align:end; font-size: large; font-style: italic">
+        <strong>@ViewBag.Bill</strong>
+    </label>
+</p>
+
+<form method="get" action="/@ViewBag.UserId.ToString()/addpayment">
     <input type="hidden" value="@ViewBag.OrderId" name="orderid" />
     <input type="submit" value="Add payment" />
 </form>
@@ -48,7 +54,7 @@
                         @Html.DisplayFor(modelItem => item.Price)
                     </td>
                     <td>
-                        <form method="post" action="@ViewBag.UserId.ToString()/@ViewBag.OrderId.ToString()/deleteunit">
+                        <form method="post" action="/@ViewBag.UserId.ToString()/@ViewBag.OrderId.ToString()/deleteunit">
                             <input type="hidden" name="goodsid" value=@item.GoodsId />
                             <button>Удалить</button>
                         </form>

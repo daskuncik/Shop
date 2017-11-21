@@ -13,8 +13,7 @@
 
 
 
-<form method="post" action="~/Main/AddOrder">
-    <input type="hidden" name="userid" value="@ViewBag.UserId" />
+<form method="post" action="/@ViewBag.UserId.ToString()/addorder">
     <input type="submit" value="Создать заказ" />
 </form> 
 
@@ -44,7 +43,14 @@
                     <strong><em>@item.TotalSum.ToString()</em></strong>
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.AmountPaid)
+                    @if (item.AmountPaid >= 0)
+                    {
+                        @Html.DisplayFor(modelItem => item.AmountPaid);
+                    }
+                    else
+                    {
+                        <b>Bill service unavailable</b>
+                    }
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Date)

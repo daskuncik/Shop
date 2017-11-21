@@ -6,9 +6,8 @@
 
 @if (ViewBag.UserId != null)
 {
-    <form  method="get" asp-route="@ViewBag.UserId.ToString()/orders">
-        <button>К заказам</button>
+    <form  method="get" asp-route="/@ViewBag.UserId.ToString()/orders">
+        <input type="submit" value="To Orders" />
     </form>
         
-    <li><a asp-area="" asp-controller="Main" asp-action="GetOrders">Orders</a></li>
 }

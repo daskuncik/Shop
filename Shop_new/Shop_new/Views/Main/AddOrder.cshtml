@@ -6,14 +6,12 @@
 
 @if (ViewBag.UserId != null)
 {
-    <input type="hidden" name="userid" value=@ViewBag.UserId />
-    <input type="submit" value="Добавить">
 
     <form method="get" action="@ViewBag.UserId.ToString()/orders">
-        <button>К заказам</button>
+        <input type="submit" value="To Orders">
     </form>
     <form method="get" action="@ViewBag.UserId.ToString()/goods">
-        <button>К товарам</button>
+        <input type="submit" value="To Goods">
     </form>
 }
 
