@@ -45,7 +45,7 @@ namespace Shop_new.Controllers
             if ((page != null && perpage == null) || (page == null && perpage != null))
             {
                 ViewBag.UserId = userid.GetValueOrDefault(); ;
-                ViewBag.Message = "Invalid Pages";
+                ViewBag.Message = "Invalid f Pages";
                 return PartialView("_GetOrders");
                 //return StatusCode(400, "Invalid pages");//null;
             }
@@ -105,7 +105,7 @@ namespace Shop_new.Controllers
         {
             ViewBag.UserId = userid;
             List<OrderModel> response_order = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), 0, 0);
-            if (response_order.Count() > 0)
+            if (response_order != null && response_order.Count() > 0)
                 ViewBag.OrderIds = response_order;
             else
                 ViewBag.OrderIds = null;
