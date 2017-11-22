@@ -7,10 +7,10 @@
 @if (ViewBag.UserId != null && ViewBag.OrderId != null)
 {
     <form method="get" action="/@ViewBag.UserId.ToString()/orders" >
-        <button>К заказам</button>
+        <input type="submit" value="To Orders">
     </form>
 
     <form method="get" action="/@ViewBag.UserId.ToString()/info/@ViewBag.OrderId.ToString()">
-        <button>Вернуться к заказy @ViewBag.OrderId.ToString()</button>
+        <input type="submit" value="Return to order @ViewBag.OrderId.ToString()">
     </form>
 }

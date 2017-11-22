@@ -7,10 +7,10 @@
 @if (ViewBag.UserId != null)
 {
 
-    <form method="get" action="@ViewBag.UserId.ToString()/orders">
+    <form method="get" action="/@ViewBag.UserId.ToString()/orders">
         <input type="submit" value="To Orders">
     </form>
-    <form method="get" action="@ViewBag.UserId.ToString()/goods">
+    <form method="get" action="/@ViewBag.UserId.ToString()/goods">
         <input type="submit" value="To Goods">
     </form>
 }

@@ -6,23 +6,23 @@
 
 
 <form method="post" action="/@ViewBag.UserId.ToString()/addorder">
-    <input type="submit" value="Создать заказ" />
+    <input type="submit" value="Create order" />
 </form> 
 
 
 <table style="margin-top: 40px" class="table" border="1">
     <tr>
         <th>
-            <p>Сумма заказа</p>
+            <p>Order sum</p>
         </th>
         <th>
-            <p>Сколько оплачено</p>
+            <p>Paid for</p>
         </th>
         <th>
-            <p>Дата составления заказа</p>
+            <p>Date of order</p>
         </th>
         <th>
-            <p>Действия</p>
+            <p>Actions</p>
         </th>
     </tr>
     @foreach (var item in Model)

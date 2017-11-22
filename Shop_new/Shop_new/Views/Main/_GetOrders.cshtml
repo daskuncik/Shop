@@ -6,7 +6,7 @@
 
 @if (ViewBag.UserId != null)
 {
-    <form method="post" action="@ViewBag.UserId.ToString()/addorder" >
-        <input type="submit" value="Создать заказ" />
+    <form method="post" action="/@ViewBag.UserId.ToString()/addorder" >
+        <input type="submit" value="Create order" />
     </form>
 }

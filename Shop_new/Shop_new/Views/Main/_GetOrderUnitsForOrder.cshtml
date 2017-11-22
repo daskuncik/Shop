@@ -6,7 +6,7 @@
 
 @if (ViewBag.UserId != null)
 {
-    <form  method="get" asp-route="/@ViewBag.UserId.ToString()/orders">
+    <form  method="get" action="/@ViewBag.UserId.ToString()/orders">
         <input type="submit" value="To Orders" />
     </form>
         

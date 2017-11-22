@@ -22,6 +22,7 @@ namespace OrderService.Controllers
             this.db = db;
             this.logger = logger;
             this.logger = logger;
+            //OrderUnit defaultt = default(OrderUnit); null
         }
 
 
@@ -201,7 +202,7 @@ namespace OrderService.Controllers
            {
                 logger.LogDebug($"Order {orderid} for user {userid} exists in database");
                 var orderUnits = db.OrderUnits.Where(q => q.OrderId == orderid);
-                if (orderUnits != null)
+                if (orderUnits != null && orderUnits.Count() > 0)
                 {
                     foreach (var unit in orderUnits)
                     {
@@ -228,10 +229,27 @@ namespace OrderService.Controllers
             if (orderunit != null)
             {
                 logger.LogDebug($"Removing order unit {goodsid} for order {orderid}");
-                var state = db.OrderUnits.Remove(orderunit)?.State;
-                logger.LogDebug($"Order unit {goodsid} removed from order {orderid} with state {state}");
-                db.SaveChanges();
+                if (orderunit.Count > 1)
+                {
+                    db.Entry(orderunit).State = EntityState.Modified;
+                    orderunit.Count--;
+                    db.SaveChanges();
+                    return Ok();
+                }
+                else
+                {
+                    var state = db.OrderUnits.Remove(orderunit)?.State;
+                    if (state.Value == EntityState.Deleted)
+                    {
+                        db.SaveChanges();
+                        
+                    }
+
+                    logger.LogDebug($"Order unit {goodsid} removed from order {orderid} with state {state}");
+                }
                 return Ok();
+                //db.SaveChanges();
+                //return Ok();
             }
             else
             {

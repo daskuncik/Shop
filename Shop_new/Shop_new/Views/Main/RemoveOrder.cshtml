@@ -4,7 +4,11 @@
 
 <h4>@ViewBag.Message</h4>
 
-<form method="get" action="~/Main/GetOrders">
-    <input type="hidden" name="userid" value="@ViewBag.UserId" />
+<!--<form method="get" action="~/Main/GetOrders">
+    <input type="hidden" name="userid" value="ViewBag.UserId" />
     <input type="submit" value="Orders" />
-</form> 
+</form> -->
+
+<form method="get" action="/@ViewBag.UserId.ToString()/orders">
+    <input type="submit" value="To Orders" />
+</form>
