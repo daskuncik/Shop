@@ -10,6 +10,7 @@ using Shop_new.Qeue;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace Shop_new.Controllers
 {
@@ -29,6 +30,48 @@ namespace Shop_new.Controllers
             this.billService = _billService;
             this.orderService = _orderService;
             this.warehouseService = _warehouseService;
+        }
+
+        [HttpGet("")]
+        public async Task<IActionResult> Get()
+        {
+            Dictionary<string, string> parametrs = new Dictionary<string, string>();
+            parametrs.Add("userid", "1");
+            //parametrs.Add("page", "0");
+            //parametrs.Add("perpage", "0");
+            return RedirectToAction("GetOrders", parametrs);
+        }
+
+        [HttpGet("user")]
+        public async Task<IActionResult> Register()
+        {
+            return View();
+        }
+
+        [HttpPost("user")]
+        public async Task<IActionResult> Register(string username)
+        {
+            if (username == null || !Regex.IsMatch(username, @"\S+"))
+                return BadRequest("Name not valid");
+
+            var response = await accountsService.Register(userModel);
+            logger.LogInformation($"Response from accounts service: {response?.StatusCode}");
+
+            if (response?.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return StatusCode(200, "");
+            }
+            else if (response != null)
+            {
+                string respContent = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
+                logger.LogError($"User {userModel.Username} not registered, error content: {respContent}");
+                return StatusCode(500, respContent);
+            }
+            else
+            {
+                logger.LogCritical("Accounts service unavailable");
+                return StatusCode(503, "Accounts service unavailable");
+            }
         }
 
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
