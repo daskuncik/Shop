@@ -19,17 +19,20 @@ namespace Shop_new.Controllers
         private BillService billService;
         private OrderService orderService;
         private WareHouseService warehouseService;
+        private UserService userService;
         private ILogger<MainController> logger;
 
         public MainController(ILogger<MainController> logger,
             BillService _billService,
             OrderService _orderService,
-            WareHouseService _warehouseService)
+            WareHouseService _warehouseService,
+            UserService _userService)
         {
             this.logger = logger;
             this.billService = _billService;
             this.orderService = _orderService;
             this.warehouseService = _warehouseService;
+            this.userService = _userService;
         }
 
         [HttpGet("")]
@@ -54,7 +57,7 @@ namespace Shop_new.Controllers
             if (username == null || !Regex.IsMatch(username, @"\S+"))
                 return BadRequest("Name not valid");
 
-            var response = await accountsService.Register(userModel);
+            var response = await userService.Register(username);
             logger.LogInformation($"Response from accounts service: {response?.StatusCode}");
 
             if (response?.StatusCode == System.Net.HttpStatusCode.OK)
@@ -64,7 +67,7 @@ namespace Shop_new.Controllers
             else if (response != null)
             {
                 string respContent = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
-                logger.LogError($"User {userModel.Username} not registered, error content: {respContent}");
+                logger.LogError($"User {username} not registered, error content: {respContent}");
                 return StatusCode(500, respContent);
             }
             else
