@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Shop_new.Controllers
 {
@@ -76,6 +79,23 @@ namespace Shop_new.Controllers
                 return StatusCode(503, "Accounts service unavailable");
             }
         }
+
+        [HttpGet("login")]
+        public async Task<IActionResult> Login(string username)
+        {
+            var result = await userService.CheckIfUserExists(username);
+            if (result.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                ViewBag.Message = $"No User with name {username}";
+                return View("Register");
+            }
+            await Authenticate(username);
+            ViewBag.Message = "Success";
+            return View("_Register");
+                //return View("Error", new ErrorModel(result));
+            //return RedirectToAction(nameof(Index), new IndexModel { Username = username });
+        }
+
 
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
         public async Task<IActionResult> GetOrders(int? userid, int? page, int? perpage)
@@ -799,6 +819,19 @@ namespace Shop_new.Controllers
             
         }
 
+
+        private async Task Authenticate(string userName)
+        {
+            // создаем один claim
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimsIdentity.DefaultNameClaimType, userName)
+            };
+            // создаем объект ClaimsIdentity
+            ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            // установка аутентификационных куки
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+        }
 
         //[HttpGet("")]
         //public async Task<IActionResult> CreateObjectsInDB()
