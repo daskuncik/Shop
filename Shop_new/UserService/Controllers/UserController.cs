@@ -13,6 +13,12 @@ namespace UserService.Controllers
         // GET api/values
         UserDbContext db;
 
+        [HttpGet("check")]
+        public async Task<IActionResult> Check()
+        {
+            return Ok();
+        }
+
         [HttpPost("user")]
         public async Task<IActionResult> Register(string name)
         {
