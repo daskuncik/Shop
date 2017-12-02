@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using BillingService.Models;
 using Microsoft.EntityFrameworkCore;
+using Shop_new.CustomAuthorisation;
 
 namespace BillingService
 {
@@ -30,6 +31,7 @@ namespace BillingService
             services.AddDbContext<BillDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("BillConnection")));
 
             services.BuildServiceProvider().GetRequiredService<BillDbContext>().Database.Migrate();
+            services.AddSingleton<TokenStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

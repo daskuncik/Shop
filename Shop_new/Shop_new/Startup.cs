@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Shop_new.Services;
 using System.IdentityModel.Tokens.Jwt;
+using IdentityServer4;
+using Shop_new.CustomAuthorisation;
 
 namespace Shop_new
 {
@@ -34,11 +36,30 @@ namespace Shop_new
                 {
                     options.LoginPath = new Microsoft.AspNetCore.Http.PathString("/user");
                 });
-            services.AddMvc();
+            
             services.AddTransient<BillService>();
             services.AddTransient<OrderService>();
             services.AddTransient<WareHouseService>();
             services.AddTransient<UserService>();
+
+            services.AddLogging(lb => lb.AddConsole());
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                .AddIdentityServerAuthentication(o =>
+                {
+                    o.Authority = "https://localhost:63939/login";
+                    o.RequireHttpsMetadata = false;
+                    o.ApiName = "api";
+                });
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    builder => builder
+                    .AllowAnyMethod()
+                    .AllowAnyOrigin()
+                    .AllowAnyHeader());
+            });
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,16 +76,10 @@ namespace Shop_new
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            app.UseStaticFiles();
-
+            app.UseCors("AllowAll");
+            app.UseMiddleware<ShopnewCustomAuthorizationMiddleware>();
             app.UseAuthentication();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Main}/{action=GetOrders}/{userid = 1}");
-            });
+            app.UseStaticFiles();
         }
     }
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Shop_new.CustomAuthorisation
 {
-    public class CustomAuthorizationMiddleware
+    public abstract class CustomAuthorizationMiddleware
     {
         public static string AuthorizationWord = "Authorization";
         public static string UserWord = "User";

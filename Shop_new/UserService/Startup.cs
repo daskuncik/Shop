@@ -10,6 +10,7 @@ using UserService.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using Shop_new.CustomAuthorisation;
 
 namespace UserService
 {
@@ -29,6 +30,7 @@ namespace UserService
             services.AddDbContext<UserDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("UserConnection")));
 
             services.BuildServiceProvider().GetRequiredService<UserDbContext>().Database.Migrate();
+            services.AddSingleton<TokenStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

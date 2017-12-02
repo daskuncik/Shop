@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WareHouseService.Models;
 using Microsoft.EntityFrameworkCore;
+using Shop_new.CustomAuthorisation;
 
 namespace WareHouseService
 {
@@ -29,6 +30,7 @@ namespace WareHouseService
             services.AddDbContext<GoodsDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("GoodsConnection")));
 
             services.BuildServiceProvider().GetRequiredService<GoodsDbContext>().Database.Migrate();
+            services.AddSingleton<TokenStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
