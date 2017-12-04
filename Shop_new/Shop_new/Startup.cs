@@ -15,6 +15,9 @@ using Shop_new.Services;
 using System.IdentityModel.Tokens.Jwt;
 using IdentityServer4;
 using Shop_new.CustomAuthorisation;
+using IdentityServer4.AccessTokenValidation;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Shop_new
 {
@@ -46,11 +49,11 @@ namespace Shop_new
             services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
                 .AddIdentityServerAuthentication(o =>
                 {
-                    o.Authority = "https://localhost:63939/login";
+                    o.Authority = "http://localhost:49491/";
                     o.RequireHttpsMetadata = false;
                     o.ApiName = "api";
                 });
-
+            services.AddSingleton<TokenStore>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll",
@@ -59,6 +62,9 @@ namespace Shop_new
                     .AllowAnyOrigin()
                     .AllowAnyHeader());
             });
+            services.AddDbContext<TokenDbContext>(options =>
+            options.UseInMemoryDatabase("Tokenss"));
+
             services.AddMvc();
         }
 
@@ -77,8 +83,9 @@ namespace Shop_new
             }
 
             app.UseCors("AllowAll");
-            app.UseMiddleware<ShopnewCustomAuthorizationMiddleware>();
             app.UseAuthentication();
+            //app.UseMiddleware<ShopnewCustomAuthorizationMiddleware>();
+            app.UseMvc();
             app.UseStaticFiles();
         }
     }

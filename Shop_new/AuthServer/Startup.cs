@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthServer
 {
@@ -29,22 +30,22 @@ namespace AuthServer
                 .AddDeveloperSigningCredential()
                 .AddInMemoryApiResources(Config.GetApiResources())
                 .AddInMemoryClients(Config.GetClients())
-                .AddTestUsers(Config.GetUsers())
+                //.AddTestUsers(Config.GetUsers())
                 .AddProfileService<ProfileService>();
 
             services.AddTransient<ProfileService>();
 
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAll",
-                    builder => builder
-                    .AllowAnyMethod()
-                    .AllowAnyOrigin()
-                    .AllowAnyHeader());
-            });
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("AllowAll",
+            //        builder => builder
+            //        .AllowAnyMethod()
+            //        .AllowAnyOrigin()
+            //        .AllowAnyHeader());
+            //});
 
-            //services.AddDbContext<AppDbContext>(options =>
-                //options.UseInMemoryDatabase("Auth"));
+            services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase("Auth"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,7 +55,7 @@ namespace AuthServer
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseCors("AllowAll");
+            //app.UseCors("AllowAll");
             app.UseIdentityServer();
             app.UseMvc();
         }

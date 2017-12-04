@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Models;
+using Shop_new;
 
 namespace UserService.Controllers
 {
@@ -12,6 +13,7 @@ namespace UserService.Controllers
     {
         // GET api/values
         UserDbContext db;
+        
 
         [HttpGet("check")]
         public async Task<IActionResult> Check()
@@ -19,8 +21,30 @@ namespace UserService.Controllers
             return Ok();
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] string username, string password)
+        {
+            //logger.LogDebug($"Login request, username: {userModel.Username}");
+            User user = db.Users.FirstOrDefault(u => u.Name == username);
+            //User user = db.Users.FirstOrDefault(u => u.Name == userModel.Username);
+            if (user != null)
+            {
+                if (user.Password == password.Sha256())
+                {
+                    //logger.LogDebug($"User {user.Name} found");
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500, "Wrong password");
+                }
+            }
+            //logger.LogWarning($"User {userModel.Username} not found");
+            return StatusCode(500, "User not found");
+        }
+
         [HttpPost("user")]
-        public async Task<IActionResult> Register(string name)
+        public async Task<IActionResult> Register(string name, string password)
         {
             User user = db.Users.FirstOrDefault(u => u.Name == name);
             if (user == null)
@@ -82,6 +106,32 @@ namespace UserService.Controllers
             if (string.IsNullOrWhiteSpace(message))
                 return Ok();
             return StatusCode(500, message);
+        }
+
+        [HttpPost("getId")]
+        public async Task<int> GetUserId([FromBody] string username, string password)
+        {
+            
+            //logger.LogDebug($"Login request, username: {userModel.Username}");
+            User user = db.Users.FirstOrDefault(u => u.Name == username && u.Password == password.Sha256());
+            //User user = db.Users.FirstOrDefault(u => u.Name == userModel.Username);
+            if (user != null)
+                return user.Id;
+            //logger.LogWarning($"User {userModel.Username} not found");
+            return -1;
+        }
+
+        [HttpPost("getId2")]
+        public async Task<int> GetUserId2([FromBody] string username)
+        {
+
+            //logger.LogDebug($"Login request, username: {userModel.Username}");
+            User user = db.Users.FirstOrDefault(u => u.Name == username);
+            //User user = db.Users.FirstOrDefault(u => u.Name == userModel.Username);
+            if (user != null)
+                return user.Id;
+            //logger.LogWarning($"User {userModel.Username} not found");
+            return -1;
         }
     }
 }

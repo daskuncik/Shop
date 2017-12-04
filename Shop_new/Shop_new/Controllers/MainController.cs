@@ -14,9 +14,12 @@ using System.Text.RegularExpressions;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Shop_new.CustomAuthorisation;
 
 namespace Shop_new.Controllers
 {
+    
     public class MainController : Controller
     {
         private BillService billService;
@@ -24,6 +27,8 @@ namespace Shop_new.Controllers
         private WareHouseService warehouseService;
         private UserService userService;
         private ILogger<MainController> logger;
+        private TokenStore tokenStore;
+
 
         public MainController(ILogger<MainController> logger,
             BillService _billService,
@@ -38,14 +43,22 @@ namespace Shop_new.Controllers
             this.userService = _userService;
         }
 
+        //[Authorize]
         [HttpGet("")]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(string username)
         {
-            Dictionary<string, string> parametrs = new Dictionary<string, string>();
-            parametrs.Add("userid", "1");
-            //parametrs.Add("page", "0");
-            //parametrs.Add("perpage", "0");
-            return RedirectToAction("GetOrders", parametrs);
+            if (Request.Headers.Keys.Contains(CustomAuthorizationMiddleware.UserWord))
+                username = string.Join(string.Empty, Request.Headers[CustomAuthorizationMiddleware.UserWord]);
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                int userid = await userService.GetUserIdByName(username);
+                ViewBag.UserId = userid;
+                Dictionary<string, string> parametrs = new Dictionary<string, string>(); 
+                parametrs.Add("userid", userid.ToString());
+                return RedirectToAction("GetOrders", parametrs);
+            }
+            else
+                return RedirectToAction(nameof(Register));
         }
 
         [HttpGet("user")]
@@ -55,12 +68,12 @@ namespace Shop_new.Controllers
         }
 
         [HttpPost("user")]
-        public async Task<IActionResult> Register(string username)
+        public async Task<IActionResult> Register(string username, string password)
         {
             if (username == null || !Regex.IsMatch(username, @"\S+"))
                 return BadRequest("Name not valid");
 
-            var response = await userService.Register(username);
+            var response = await userService.Register(username, password);
             logger.LogInformation($"Response from accounts service: {response?.StatusCode}");
 
             if (response?.StatusCode == System.Net.HttpStatusCode.OK)
@@ -81,22 +94,61 @@ namespace Shop_new.Controllers
         }
 
         [HttpGet("login")]
-        public async Task<IActionResult> Login(string username)
+        //[HttpGet("")]
+        public async Task<IActionResult> Login(string username, string password)
         {
-            var result = await userService.CheckIfUserExists(username);
-            if (result.StatusCode != System.Net.HttpStatusCode.OK)
+            var result = await userService.Login(username, password);
+            if (result == null)
             {
-                ViewBag.Message = $"No User with name {username}";
-                return View("Register");
+                //return StatusCode(503, "Accounts service unavailable");
+                ViewBag.Message = "Users service unavailable";
+                return View();
             }
-            await Authenticate(username);
-            ViewBag.Message = "Success";
-            return View("_Register");
-                //return View("Error", new ErrorModel(result));
+            else
+            if (result.IsSuccessStatusCode)
+            {
+
+                var token = tokenStore.GetToken(username, TimeSpan.FromMinutes(10));
+                Response.Cookies.Append(CustomAuthorizationMiddleware.AuthorizationWord, $"Bearer {token}");
+                int userid = await userService.GetUserId(username, password);
+                if (userid > 0)
+                {
+                    ViewBag.UserId = userid;
+                    return View("GetGoods");
+                }
+                else
+                    return View(nameof(Register));
+                //var token = tokenStore.GetToken(authenticationModel.Username, TimeSpan.FromMinutes(10));
+            }
+            else
+                return StatusCode(500, result.Content.ReadAsStringAsync().Result);
+
+
+            //var result = await userService.CheckIfUserExists(username);
+            //if (result.StatusCode != System.Net.HttpStatusCode.OK)
+            //{
+            //    ViewBag.Message = $"No User with name {username}";
+            //    return View("Register");
+            //}
+            //await Authenticate(username);
+            //ViewBag.Message = "Success";
+            //return View("_Register");
+            //return View("Error", new ErrorModel(result));
             //return RedirectToAction(nameof(Index), new IndexModel { Username = username });
         }
 
+        [HttpGet("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            if (Request.Cookies.Keys.Contains(CustomAuthorizationMiddleware.AuthorizationWord))
+            {
+                var cookie = Request.Cookies[CustomAuthorizationMiddleware.AuthorizationWord];
+                Response.Cookies.Append(CustomAuthorizationMiddleware.AuthorizationWord, cookie, new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now.AddDays(-1) });
+            }
+            return RedirectToAction(nameof(Register));
+        }
 
+        //[Authorize]
         [HttpGet("{userid}/orders")] //для пользователя получить заказы
         public async Task<IActionResult> GetOrders(int? userid, int? page, int? perpage)
         {
@@ -166,6 +218,7 @@ namespace Shop_new.Controllers
             }
         }
 
+        //[Authorize]
         [HttpGet("{userid}/goods")] //получить все товары
         public async Task<IActionResult> GetGoods(int? userid, int page = 0, int perpage = 0)
         {
@@ -191,6 +244,7 @@ namespace Shop_new.Controllers
             }
         }
 
+        [Authorize]
         //деградация функционала
         [HttpGet("bills")] //получить все счета и заказы, которые есть
         public async Task<List<string>> GetBills(int page = 0, int perpage = 0)
@@ -214,7 +268,7 @@ namespace Shop_new.Controllers
             //}
         }
 
-
+        //[Authorize]
         [HttpGet("{userid}/info/{orderid}")] //получить состав заказа
         public async Task<IActionResult> GetOrderUnitsForOrder(int? userid, int? orderid)
         {
@@ -307,6 +361,7 @@ namespace Shop_new.Controllers
 
         //модификация нескольких сервисов.
         //откат
+        //[Authorize]
         [HttpPost("{userid}/addorder")] //добавить заказ
         public async Task<IActionResult> AddOrder(int? userid)
         {
@@ -377,7 +432,7 @@ namespace Shop_new.Controllers
             }
         }
 
-
+        //[Authorize]
         [HttpPost("{userid}/addorderunit")] //добавить товар в заказ
         public async Task<IActionResult> AddOrderUnit(int? userid, int? orderid, int? goodsid)
         {
@@ -460,6 +515,7 @@ namespace Shop_new.Controllers
 
         }
 
+       // [Authorize]
         [HttpGet("{userid}/addpayment")] //добавить платеж в заказ (форма для внесения суммы)
         public async Task<IActionResult> AddPayment(int? userid, int? orderid)
         {
@@ -478,6 +534,7 @@ namespace Shop_new.Controllers
         }
 
         //Читает 1 сервис, модифицирует другое
+        //[Authorize]
         [HttpPost("{userid}/addpayment")] //добавить платеж в заказ
         public async Task<IActionResult> AddPayment(int? userid, int? orderid, int? sum)
         {
@@ -643,9 +700,10 @@ namespace Shop_new.Controllers
                     $"Order: {(order != null ? "online" : "offline")};" +
                     $"Bill: {(response != null ? "online" : "offline")};");
         }
-        
+
 
         //с очередью
+        //[Authorize]
         [HttpPost("{userid}/{orderid}/delete")] //удалить заказ
         public async Task<IActionResult> RemoveOrder(int? userid, int? orderid)
         {
@@ -717,6 +775,7 @@ namespace Shop_new.Controllers
             return View();
         }
 
+        //[Authorize]
         [HttpDelete("{orderid}/deletebill")] //удалить счет
         public async Task<IActionResult> RemoveBill( int orderid)
         {
@@ -729,6 +788,7 @@ namespace Shop_new.Controllers
         }
 
         //откат действий
+        //[Authorize]
         [HttpPost("{userid}/{orderid}/deleteunit")] //удалить товар из заказа
         public async Task<IActionResult> RemoveOrderUnit(int? userid, int? orderid, int? goodsid)
         {
@@ -832,55 +892,6 @@ namespace Shop_new.Controllers
             // установка аутентификационных куки
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
         }
-
-        //[HttpGet("")]
-        //public async Task<IActionResult> CreateObjectsInDB()
-        //{
-        //    logger.LogInformation($"Adding goods...");
-        //    var response = await warehouseService.AddGoods("samsungTV", 15000, 12);
-        //    if (response != null)
-        //    {
-        //        if (response.IsSuccessStatusCode)
-        //            logger.LogInformation($"1. SamsungTv created");
-        //        else
-        //            logger.LogInformation($"1. SamsungTv error during creating");
-        //    }
-        //    else
-        //    {
-        //        logger.LogCritical("Goods service unavailable");
-        //        return NotFound("Service unavailable");
-        //    }
-        //    ////////////
-        //    var response_2 = await warehouseService.AddGoods("iPhone_8", 27000, 8);
-        //    if (response != null)
-        //    {
-        //        if (response.IsSuccessStatusCode)
-        //            logger.LogInformation($"2. iPhone_8 created");
-        //        else
-        //            logger.LogInformation($"2. iPhone_8 error during creating");
-        //    }
-        //    else
-        //    {
-        //        logger.LogCritical("Goods service unavailable");
-        //        return NotFound("Service unavailable");
-        //    }
-        //    ////////////////
-        //    var response_3 = await warehouseService.AddGoods("OpticalMouse", 300, 115);
-        //    if (response != null)
-        //    {
-        //        if (response.IsSuccessStatusCode)
-        //            logger.LogInformation($"3. OpticalMouse created");
-        //        else
-        //            logger.LogInformation($"3. OpticalMouse error during creating");
-        //    }
-        //    else
-        //    {
-        //        logger.LogCritical("Goods service unavailable");
-        //        return NotFound("Service unavailable");
-        //    }
-        //    logger.LogInformation($"Goods added");
-        //    return Ok();
-        //}
 
     }
 }

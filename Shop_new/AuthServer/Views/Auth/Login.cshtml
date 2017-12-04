@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+@model AuthServer.Models.LoginModel
+<div class="row">
+    <div class="col-md-2">
+        <form asp-controller="Account"
+              method="post">
+            <div class="form-group">
+                <label class="control-label">Username:</label>
+                <input asp-for="Username" class="form-control" type="text" required pattern="[a-zA-Z0-9]+" title="Input username (only letters and numbers allowed)" />
+                <label class="control-label">Password:</label>
+                <input asp-for="Password" class="form-control" type="password" required title="Input password" />
+                <input asp-for="ReturnUrl" hidden value="@Model.ReturnUrl" />
+            </div>
+            <input type="submit" class="btn btn-primary" asp-action="Login" value="Login" />
+        </form>
+    </div>
+</div>

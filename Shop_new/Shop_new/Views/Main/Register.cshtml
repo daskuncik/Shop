@@ -16,6 +16,8 @@
             <div class="form-group">
                 <label class="control-label">Username:</label>
                 <input name="username" class="form-control" type="text" required pattern="[a-zA-Z0-9]+" title="Input username (only letters and numbers allowed)" />
+                <label class="control-label">Password:</label>
+                <input name="password" class="form-control" type="password" required title="Input password" />
             </div>
             <input type="submit" class="btn btn-primary" asp-action="Register" value="Register" />
             <input type="submit" class="btn btn-primary" asp-action="Login" value="Login" />

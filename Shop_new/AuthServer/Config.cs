@@ -34,7 +34,7 @@ namespace AuthServer
                     AllowAccessTokensViaBrowser = true,
                     AllowOfflineAccess = true,
                     RequireConsent = false,
-                    RedirectUris = { "https://localhost:63939/" },
+                    RedirectUris = { "http://localhost:63939/" },
                     EnableLocalLogin = true,
                     AllowedScopes =
                     {
