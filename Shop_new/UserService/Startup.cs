@@ -27,9 +27,11 @@ namespace UserService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            //services.AddDbContext<UserDbContext>(options => options.UseInMemoryDatabase("Users"));
+
             services.AddDbContext<UserDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("UserConnection")));
 
-            services.BuildServiceProvider().GetRequiredService<UserDbContext>().Database.Migrate();
+            //services.BuildServiceProvider().GetRequiredService<UserDbContext>().Database.Migrate();
             services.AddSingleton<TokenStore>();
         }
 

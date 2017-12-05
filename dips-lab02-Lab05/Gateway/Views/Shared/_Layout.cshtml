@@ -1,0 +1,51 @@
+﻿@{
+    Layout = null;
+}
+@functions{
+    public string GetCurrentName()
+    {
+        if (Context.Request.Headers.Keys.Contains("User"))
+            return Context.Request.Headers["User"];
+        return null;
+    }
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.17.0/dist/jquery.validate.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.6/jquery.validate.unobtrusive.js"></script>
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-static-top">
+        <div class="container">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li><a asp-controller="News" asp-action="Index">Show news</a></li>
+                    <li><a asp-controller="Subscriptions" asp-action="Index">Manage subscriptions</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    @if (GetCurrentName() != null)
+                    {
+                        <li class="navbar-text">Logged in as @GetCurrentName()</li>
+                        <li><a asp-controller="Users" asp-action="Index">Control panel</a></li>
+                        <li><a asp-controller="Users" asp-action="Logout">Logout</a></li>
+                    }
+                    else
+                    {
+                        <li><a asp-controller="Users" asp-action="Index">Login</a></li>
+                    }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid body-content">
+            @RenderBody()
+            <hr />
+            <footer>
+                <p>&copy; 2017 </p>
+            </footer>
+        </div>
+    </body>
+</html>

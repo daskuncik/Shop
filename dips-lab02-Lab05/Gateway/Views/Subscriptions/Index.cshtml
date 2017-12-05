@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "Subscriptions";
+}
+@model Gateway.Models.Subscriptions.IndexModel
+<h2>@Model.Username</h2>
+<div class="row">
+    <div class="col-md-2">
+        <h3> Authors: </h3>
+    </div>
+    <div class="col-md-1">
+        <h3> <a class="btn btn-success text-center btn-block" asp-action="Add" asp-route-username="@Model.Username">Add</a> </h3>
+    </div>
+</div>
+<hr/>
+
+@if (Model.Page > 0)
+{
+    <a class="btn" asp-action="Index" asp-route-Page="@(Model.Page-1)" asp-route-Username="@Model.Username" asp-route-Size="@Model.Size">Previous page</a>
+}
+
+@if (Model.Page < Model.MaxPage)
+{
+    <a class="btn" asp-action="Index" asp-route-Page="@(Model.Page+1)" asp-route-Username="@Model.Username" asp-route-Size="@Model.Size">Next page</a>
+}
+
+@foreach (var author in Model.Authors)
+{
+    <div class="row" style="padding-top:5px">
+        <div valign="bottom" class="col-md-2"><h4>@author</h4></div>
+        <div class="col-md-1"><a class="btn-danger btn-block text-center btn" asp-controller="Subscriptions" asp-action="Delete" asp-route-username="@Model.Username" asp-route-author="@author">Remove</a></div>
+    </div>
+}
+
+

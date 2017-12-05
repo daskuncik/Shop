@@ -10,7 +10,24 @@ namespace UserService.Models
     {
         public DbSet<User> Users { get; set; }
 
-        public UserDbContext() : base() { }
-        public UserDbContext(DbContextOptions<UserDbContext> ops) : base(ops) { }
+       
+
+        public UserDbContext() : base()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            if (!Users.Any())
+            {
+                Users.Add(new User { Name = "User1", Password = "pass1" });
+                SaveChanges();
+            }
+        }
+        public UserDbContext(DbContextOptions<UserDbContext> ops) : base(ops)
+        {
+            Initialize();
+        }
     }
 }

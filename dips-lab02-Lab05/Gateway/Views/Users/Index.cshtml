@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Tittle"] = "Users";
+}
+@model Gateway.Models.Users.IndexModel
+
+<h2>You are logged in as @Model.Username</h2>
+<hr/>
+<script>
+    
+</script>
+<a asp-action="Change" asp-route-username="@Model.Username" class="btn btn-warning">Change name</a>
+<a asp-action="Delete" asp-route-username="@Model.Username" class="btn btn-danger">Delete user</a>

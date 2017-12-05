@@ -1,0 +1,8 @@
+﻿@{ 
+    ViewData["Tittle"] = "Delete user";
+}
+@model string
+
+<h2>Are you sure you want to delete user @Model?</h2>
+<a asp-action="Delete" asp-route-username="@Model" asp-route-submit="true" class="btn btn-success">Yes</a>
+<a asp-action="Index" class="btn btn-danger">No</a>

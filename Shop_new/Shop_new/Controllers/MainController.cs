@@ -74,11 +74,13 @@ namespace Shop_new.Controllers
                 return BadRequest("Name not valid");
 
             var response = await userService.Register(username, password);
+            var rr = await orderService.GetOrdersForUser(1, 0, 0);
             logger.LogInformation($"Response from accounts service: {response?.StatusCode}");
 
             if (response?.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                return StatusCode(200, "");
+                //return StatusCode(200, "");
+                return View(nameof(Register));
             }
             else if (response != null)
             {
@@ -93,7 +95,7 @@ namespace Shop_new.Controllers
             }
         }
 
-        [HttpGet("login")]
+        [HttpPost("login")]
         //[HttpGet("")]
         public async Task<IActionResult> Login(string username, string password)
         {

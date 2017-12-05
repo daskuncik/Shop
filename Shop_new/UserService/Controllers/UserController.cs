@@ -46,12 +46,13 @@ namespace UserService.Controllers
         [HttpPost("user")]
         public async Task<IActionResult> Register(string name, string password)
         {
-            User user = db.Users.FirstOrDefault(u => u.Name == name);
+            var user = db.Users.FirstOrDefault(u => u.Name == name);
             if (user == null)
             {
                 User us = new Models.User
                 {
-                    Name = name
+                    Name = name,
+                    Password = password.Sha256()
                 };
                 var result = db.Users.Add(us);
                 return Ok();

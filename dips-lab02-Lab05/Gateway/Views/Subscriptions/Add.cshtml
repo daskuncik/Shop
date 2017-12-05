@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Tittle"] = "Add subscription";
+}
+@model Gateway.Models.Subscriptions.AddModel
+<div class="row">
+    <div class="col-md-2">
+        <form asp-action="Add">
+            <div class="form-group">
+                <label asp-for="Author" class="control-label">Author: </label>
+                <input asp-for="Author" class="form-control" />
+                <span asp-validation-for="Author" class="text-danger"></span>
+                <input asp-for="Username" style="visibility:collapse" value="@Model.Username" />
+            </div>
+            <input type="submit" value="Subscribe" class="btn btn-primary" />
+        </form>
+    </div>
+</div>

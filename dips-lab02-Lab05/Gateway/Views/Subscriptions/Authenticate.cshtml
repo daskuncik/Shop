@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Subscriptions";
+}
+@model Gateway.Models.Subscriptions.IndexModel
+
+<div class="row">
+    <div class="col-md-2">
+        <form asp-controller="Subscriptions"
+              asp-action="Index"
+              method="get">
+            <div class="form-group">
+                <label asp-for="Username" class="control-label">Username:</label>
+                <input asp-for="Username" class="form-control" type="text" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+            <input type="submit" class="btn btn-primary" value="Show subscriptions" />
+        </form>
+    </div>
+</div>
+

@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Tittle"] = "Add news";
+}
+@model Gateway.Models.News.AddModel
+
+<form asp-controller="News"
+      asp-action="Add">
+    <div class="form-group">
+        <div class="row">
+            <div class="col-md-2">
+                <label asp-for="Header" class="control-label">Header:</label>
+                <input asp-for="Header" class="form-control" />
+                <span asp-validation-for="Header" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class=" col-md-4">
+                <label asp-for="Body" class="control-label">Body:</label>
+                <textarea asp-for="Body" class="form-control" rows="20"></textarea>
+                <span asp-validation-for="Body" class="text-danger"></span>
+            </div>
+        </div>
+        <input asp-for="Username" width="0" height="0" style="visibility:collapse" />
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <h3><input type="submit" value="Add" class="btn btn-primary btn-block" /></h3>
+        </div>
+    </div>
+</form>
+

@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Tittle"] = "Change username";
+}
+@model string
+
+<div class="row">
+    <div class="col-md-2">
+        <form asp-controller="Users"
+              method="get">
+            <div class="form-group">
+                <label class="control-label">New username:</label>
+                <input name="NewUsername" class="form-control" type="text" required pattern="[a-zA-Z0-9]+" />
+                <input name="Username" style="visibility:collapse" value="@Model" />
+            </div>
+            <input type="submit" class="btn btn-primary" asp-action="Change" value="Change" />
+        </form>
+    </div>
+</div>
+
