@@ -13,11 +13,11 @@ namespace Shop_new.CustomAuthorisation
     public abstract class CustomAuthorizationMiddleware
     {
         public static string AuthorizationWord = "Authorization";
-        public static string UserWord = "User";
+        public static string UserWord = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
+        public static string RoleWord = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
         protected readonly RequestDelegate _next;
         //private AuthService auth;
         //protected readonly TokenStore tokensStore;
-        //////?????
         
 
         public CustomAuthorizationMiddleware(RequestDelegate next)

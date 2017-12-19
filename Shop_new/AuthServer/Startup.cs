@@ -41,7 +41,7 @@ namespace AuthServer
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase("Auth"));
             services.AddDbContext<UserContext>(options =>
-                options.UseInMemoryDatabase("Tokenss"));
+                options.UseInMemoryDatabase("Users"));
             services.AddDbContext<TokenDbContext>(options =>
                 options.UseInMemoryDatabase("Tokenss"));
 
