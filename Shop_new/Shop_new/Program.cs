@@ -19,6 +19,7 @@ namespace Shop_new
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+            .UseDefaultServiceProvider(ops => ops.ValidateScopes = false)
             .ConfigureLogging((hostingContext, logging) =>
             {
                 logging.AddConsole();

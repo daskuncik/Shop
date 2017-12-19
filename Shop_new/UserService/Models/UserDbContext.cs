@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Shop_new;
 
 namespace UserService.Models
 {
@@ -21,7 +22,8 @@ namespace UserService.Models
         {
             if (!Users.Any())
             {
-                Users.Add(new User { Name = "User1", Password = "pass1" });
+                Users.Add(new User { Name = "User1", Password = "pass1".Sha256() });
+                Users.Add(new User { Name = "User2", Password = "pass2".Sha256() });
                 SaveChanges();
             }
         }

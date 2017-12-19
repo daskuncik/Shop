@@ -87,8 +87,12 @@ namespace Shop_new.Services
                 return 0;
 
             string response = await httpResponseMessage.Content.ReadAsStringAsync();
-            int aa = Convert.ToInt32(response);
-            return aa;
+            if (response != null)
+            {
+                int aa = Convert.ToInt32(response);
+                return aa;
+            }
+            return -1;
 
         }
 

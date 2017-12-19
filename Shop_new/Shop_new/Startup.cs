@@ -44,6 +44,7 @@ namespace Shop_new
             services.AddTransient<OrderService>();
             services.AddTransient<WareHouseService>();
             services.AddTransient<UserService>();
+            services.AddTransient<AuthService>();
 
             services.AddLogging(lb => lb.AddConsole());
             services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
@@ -53,7 +54,7 @@ namespace Shop_new
                     o.RequireHttpsMetadata = false;
                     o.ApiName = "api";
                 });
-            services.AddSingleton<TokenStore>();
+            //services.AddSingleton<TokenStore>();
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll",
@@ -62,9 +63,10 @@ namespace Shop_new
                     .AllowAnyOrigin()
                     .AllowAnyHeader());
             });
-            services.AddDbContext<TokenDbContext>(options =>
-            options.UseInMemoryDatabase("Tokenss"));
+            //services.AddDbContext<TokenDbContext>(options =>
+            //options.UseInMemoryDatabase("Tokenss"));
 
+            //services.AddTransient<TokenStore>();
             services.AddMvc();
         }
 
@@ -84,7 +86,7 @@ namespace Shop_new
 
             app.UseCors("AllowAll");
             app.UseAuthentication();
-            //app.UseMiddleware<ShopnewCustomAuthorizationMiddleware>();
+            app.UseMiddleware<ShopnewCustomAuthorizationMiddleware>();
             app.UseMvc();
             app.UseStaticFiles();
         }

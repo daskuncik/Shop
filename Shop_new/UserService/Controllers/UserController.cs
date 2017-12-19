@@ -13,7 +13,11 @@ namespace UserService.Controllers
     {
         // GET api/values
         UserDbContext db;
-        
+
+        public UserController(UserDbContext db)
+        {
+            this.db = db;
+        }
 
         [HttpGet("check")]
         public async Task<IActionResult> Check()
@@ -22,7 +26,7 @@ namespace UserService.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] string username, string password)
+        public async Task<IActionResult> Login(string username, string password)
         {
             //logger.LogDebug($"Login request, username: {userModel.Username}");
             User user = db.Users.FirstOrDefault(u => u.Name == username);
@@ -55,6 +59,7 @@ namespace UserService.Controllers
                     Password = password.Sha256()
                 };
                 var result = db.Users.Add(us);
+                db.SaveChanges();
                 return Ok();
             }
             return BadRequest("Duplicate");
@@ -110,20 +115,21 @@ namespace UserService.Controllers
         }
 
         [HttpPost("getId")]
-        public async Task<int> GetUserId([FromBody] string username, string password)
+        public async Task<string> GetUserId( string username, string password)
         {
             
             //logger.LogDebug($"Login request, username: {userModel.Username}");
             User user = db.Users.FirstOrDefault(u => u.Name == username && u.Password == password.Sha256());
             //User user = db.Users.FirstOrDefault(u => u.Name == userModel.Username);
             if (user != null)
-                return user.Id;
+                return user.Id.ToString();
             //logger.LogWarning($"User {userModel.Username} not found");
-            return -1;
+            int a = -1;
+            return a.ToString();
         }
 
         [HttpPost("getId2")]
-        public async Task<int> GetUserId2([FromBody] string username)
+        public async Task<int> GetUserId2( string username)
         {
 
             //logger.LogDebug($"Login request, username: {userModel.Username}");

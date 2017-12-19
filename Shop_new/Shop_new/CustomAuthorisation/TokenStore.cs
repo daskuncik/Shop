@@ -1,74 +1,77 @@
-﻿using Shop_new.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-
 
 namespace Shop_new.CustomAuthorisation
 {
-    public class TokenStore
+    public class TokensStore
     {
         // Token: Name, Expiry, Last access time
         //Dictionary<string, (string, DateTime, DateTime)> tokens = new Dictionary<string, (string, DateTime, DateTime)>();
-        TokenDbContext db = new TokenDbContext();
-        public CheckTokenResult CheckToken(string token)
+        IEnumerable<TokenInfo> tokens = new List<TokenInfo>();
+        private object lck = new object();
+        public TokensStore()
         {
-            var tok = db.Tokens.FirstOrDefault(q => q.token == token);
-            if (tok == null)
-                return CheckTokenResult.NotValid;
-            //if (!tokens.Keys.Contains(token))
-            // return CheckTokenResult.NotValid;
-
-            //if (tokens[token].Item2 > DateTime.Now)
-            if (tok.Item1 > DateTime.Now)
+            Task.Run(() =>
             {
-                //if (DateTime.Now - tokens[token].Item3 < TimeSpan.FromMinutes(30))
-                if (DateTime.Now - tok.Item2 < TimeSpan.FromMinutes(30))
+                lock (lck)
                 {
-                    //var prev = tokens[token];
-                    var prev = tok;
-                    //tokens.Remove(token);
-                    db.Tokens.Remove(tok);
-                    db.SaveChanges();
-                    //tokens.Add(token, (prev.Item1, prev.Item2, DateTime.Now));
-                    tok.Item2 = DateTime.Now;
-                    db.Tokens.Add(tok);
-                    db.SaveChanges();
-                    return CheckTokenResult.Valid;
+                    foreach (var token in tokens)
+                        CheckToken(token.Token);
                 }
-            }
-            //tokens.Remove(token);
-            db.Tokens.Remove(tok);
-            db.SaveChanges();
-            return CheckTokenResult.Expired;
+                Thread.Sleep(60000);
+            });
         }
 
-        public string GetToken(string _owner, TimeSpan expiration)
+        public CheckTokenResult CheckToken(string token)
         {
-            var _token = Guid.NewGuid().ToString();
-            var expiry = DateTime.Now + expiration;
-            var tok = new Token
+            lock (lck)
             {
-                token = _token,
-                owner = _owner,
-                Item1 = expiry,
-                Item2 = DateTime.Now
-            };
-            db.Tokens.Add(tok);
-            //tokens.Add(_token, (owner, expiry, DateTime.Now));
-            return _token;
+                var currentToken = tokens.FirstOrDefault(t => t.Token == token);
+                if (currentToken == null)
+                    return CheckTokenResult.NotValid;
+                if (currentToken.Expiry > DateTime.Now)
+                {
+                    if (DateTime.Now - currentToken.LastAccessDate < TimeSpan.FromMinutes(30))
+                    {
+                        currentToken.LastAccessDate = DateTime.Now;
+                        return CheckTokenResult.Valid;
+                    }
+                }
+                tokens = tokens.Where(t => t.Token != token);
+                return CheckTokenResult.Expired;
+            }
+        }
+
+        public string GetToken(string owner, TimeSpan expiration)
+        {
+            lock (lck)
+            {
+                var token = Guid.NewGuid().ToString();
+                var expiry = DateTime.Now + expiration;
+                tokens = tokens.Concat(new[]{
+                    new TokenInfo
+                    {
+                        Token = token,
+                        Expiry = expiry,
+                        LastAccessDate = DateTime.Now,
+                        Username = owner
+                    }
+                });
+                return token;
+            }
         }
 
         public string GetNameByToken(string token)
         {
-            var tok = db.Tokens.FirstOrDefault(q => q.token == token);
-            if (tok == null)
+            lock (lck)
+            {
+                if (tokens.Any(t => t.Token == token))
+                    return tokens.First(t => t.Token == token).Username;
                 return null;
-            return tok.owner;
-           // if (tokens.Keys.Contains(token))
-               // return tokens[token].Item1;
-            //return null;
+            }
         }
     }
 
@@ -77,5 +80,14 @@ namespace Shop_new.CustomAuthorisation
         Valid,
         NotValid,
         Expired
+    }
+
+    public class TokenInfo
+    {
+        public int Id { get; set; }
+        public string Token { get; set; }
+        public string Username { get; set; }
+        public DateTime Expiry { get; set; }
+        public DateTime LastAccessDate { get; set; }
     }
 }

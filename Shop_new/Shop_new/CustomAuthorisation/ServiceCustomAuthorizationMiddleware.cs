@@ -6,37 +6,49 @@ using Microsoft.AspNetCore.Http;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Text;
+using Shop_new.Services;
 
 namespace Shop_new.CustomAuthorisation
 {
     public class ServiceCustomAuthorizationMiddleware :CustomAuthorizationMiddleware
     {
+        private const string serviceWord = "Service";
         private List<(string, string)> allowedApps = new List<(string, string)> { ("AppId", "AppSecret") };
+        private TokensStore tokensStore;
 
-        public ServiceCustomAuthorizationMiddleware(RequestDelegate next, TokenStore tokensStore) : base(next, tokensStore)
+        public ServiceCustomAuthorizationMiddleware(RequestDelegate next, TokensStore tokensStore) : base(next)
         {
+            this.tokensStore = tokensStore;
         }
 
         public override async Task Invoke(HttpContext context)
         {
-            if (RequestedToken(context))
+            if (IsBasicAuthorizationSuccess(context))
             {
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync(tokensStore.GetToken(Guid.NewGuid().ToString(), TimeSpan.FromSeconds(5)));
+                await context.Response.WriteAsync(tokensStore.GetToken(serviceWord, TimeSpan.FromMinutes(15)));
                 return;
             }
-            else if (context.Request.Headers.Keys.Contains(AuthorizationWord))
+            else if (IsBearerAuthorization(context))
             {
                 var auth = context.Request.Headers[AuthorizationWord];
-                await CheckAuthorization(context, auth);
+                await CheckBearerAuthorization(context, auth);
             }
             else
                 await base.Invoke(context);
         }
 
+
+        private static bool IsBearerAuthorization(HttpContext context)
+        {
+            return context.Request.Headers.Keys.Contains(AuthorizationWord);
+        }
+
+
         public override List<string> GetAnonymousPaths()
         {
-            return new[] { "login" }.ToList();
+            //return new[] { "login" }.ToList();
+            return new List<string>();
         }
 
         public override async Task ReturnForbidden(HttpContext context, string message)
@@ -61,6 +73,28 @@ namespace Shop_new.CustomAuthorisation
                 }
             }
             return false;
+        }
+
+        private bool IsBasicAuthorizationSuccess(HttpContext context)
+        {
+            if (context.Request.Headers.Keys.Contains(AuthorizationWord))
+            {
+                string auth = string.Join(string.Empty, context.Request.Headers[AuthorizationWord]);
+                var match = Regex.Match(auth, @"Basic (\S+)");
+                if (match.Groups.Count > 1)
+                {
+                    byte[] appIdAndSecretBytes = Convert.FromBase64String(match.Groups[1].Value);
+                    var appIdAndSecret = Encoding.UTF8.GetString(appIdAndSecretBytes).Split(':');
+                    if (allowedApps.Contains((appIdAndSecret[0], appIdAndSecret[1])))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public override string GetUserByToken(string token)
+        {
+            return tokensStore.GetNameByToken(token);
         }
 
     }

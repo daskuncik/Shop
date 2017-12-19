@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Shop_new.Services;
 
 namespace Shop_new.CustomAuthorisation
 {
@@ -14,14 +15,15 @@ namespace Shop_new.CustomAuthorisation
         public static string AuthorizationWord = "Authorization";
         public static string UserWord = "User";
         protected readonly RequestDelegate _next;
-        protected readonly TokenStore tokensStore;
+        //private AuthService auth;
+        //protected readonly TokenStore tokensStore;
         //////?????
         
 
-        public CustomAuthorizationMiddleware(RequestDelegate next, TokenStore tokensStore)
+        public CustomAuthorizationMiddleware(RequestDelegate next)
         {
             _next = next;
-            this.tokensStore = tokensStore;
+           // this.tokensStore = tokensStore;
         }
 
         public virtual async Task Invoke(HttpContext context)
@@ -29,7 +31,8 @@ namespace Shop_new.CustomAuthorisation
             if (context.Request.Cookies.Keys.Contains(AuthorizationWord))
             {
                 var auth = context.Request.Cookies[AuthorizationWord];
-                await CheckAuthorization(context, auth);
+                //await CheckAuthorization(context, auth);
+                await CheckBearerAuthorization(context, auth);
             }
             else if (context.Request.Path.Value.Split('/').Intersect(GetAnonymousPaths()).Any())
             {
@@ -42,7 +45,7 @@ namespace Shop_new.CustomAuthorisation
             }
         }
 
-        protected async Task CheckAuthorization(HttpContext context, string auth)
+        protected async Task CheckBearerAuthorization(HttpContext context, string auth)
         {
             var match = Regex.Match(auth, @"Bearer (\S+)");
             if (match.Groups.Count == 1)
@@ -52,14 +55,16 @@ namespace Shop_new.CustomAuthorisation
             else
             {
                 var token = match.Groups[1].Value;
-                var result = tokensStore.CheckToken(token);
-                if (result == CheckTokenResult.Valid)
+                var result = GetUserByToken(token);
+                //var result = tokensStore.CheckToken(token);
+                if (!string.IsNullOrWhiteSpace(result))
                 {
-                    context.Request.Headers.Add(UserWord, tokensStore.GetNameByToken(token));
+                    context.Request.Headers.Add(UserWord, result);
                     await this._next(context);
+                    // string name = await this.auth.GetTokenByName(token);
+                    //context.Request.Headers.Add(UserWord, name);
+                    // await this._next(context);
                 }
-                else if (result == CheckTokenResult.Expired)
-                    await ReturnForbidden(context, "Token has expired");
                 else
                     await ReturnForbidden(context, "Token not valid");
             }
@@ -68,5 +73,7 @@ namespace Shop_new.CustomAuthorisation
         public abstract Task ReturnForbidden(HttpContext context, string message);
 
         public abstract List<string> GetAnonymousPaths();
+
+        public abstract string GetUserByToken(string token);
     }
 }

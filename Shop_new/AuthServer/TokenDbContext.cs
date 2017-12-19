@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shop_new.Models;
 
-namespace Shop_new
+namespace AuthServer
 {
     public class TokenDbContext : DbContext
     {

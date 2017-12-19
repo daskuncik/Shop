@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Shop_new.Services;
 
 namespace Shop_new.CustomAuthorisation
 {
     public class ShopnewCustomAuthorizationMiddleware : CustomAuthorizationMiddleware
     {
-        public override List<string> GetAnonymousPaths() => new[] { "api", "auth", "login", "register" }.ToList();
+        public override List<string> GetAnonymousPaths() => new[] { "api", "auth", "user", "login", "register" }.ToList();
 
-        public ShopnewCustomAuthorizationMiddleware(RequestDelegate next, TokenStore tokensStore) : base(next, tokensStore)
+        private AuthService authService;
+ 
+        public ShopnewCustomAuthorizationMiddleware(RequestDelegate next, AuthService authService) : base(next)
         {
+            this.authService = authService;
         }
 
         public override async Task Invoke(HttpContext context)
@@ -26,12 +30,17 @@ namespace Shop_new.CustomAuthorisation
 
         public override async Task ReturnForbidden(HttpContext context, string message)
         {
-            string redirect = "/users/auth";
+            string redirect = "/user";
             if (context.Request.Path != redirect)
             {
                 redirect += $"?Redirect={context.Request.Path}";
             }
             context.Response.Redirect(redirect);
+        }
+
+        public override string GetUserByToken(string token)
+        {
+            return authService.Verify(token)?.Result;
         }
     }
 }

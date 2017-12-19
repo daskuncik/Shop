@@ -27,26 +27,33 @@ namespace Shop_new.Controllers
         private WareHouseService warehouseService;
         private UserService userService;
         private ILogger<MainController> logger;
-        private TokenStore tokenStore;
+        private AuthService authService;
+        //private TokenStore tokenStore;
 
 
         public MainController(ILogger<MainController> logger,
             BillService _billService,
             OrderService _orderService,
             WareHouseService _warehouseService,
-            UserService _userService)
+            UserService _userService,
+            AuthService auth)
+           // TokenStore _tokenStore)
         {
             this.logger = logger;
             this.billService = _billService;
             this.orderService = _orderService;
             this.warehouseService = _warehouseService;
             this.userService = _userService;
+            this.authService = auth;
+            //this.tokenStore = _tokenStore;
         }
 
         //[Authorize]
         [HttpGet("")]
         public async Task<IActionResult> Get(string username)
         {
+
+
             if (Request.Headers.Keys.Contains(CustomAuthorizationMiddleware.UserWord))
                 username = string.Join(string.Empty, Request.Headers[CustomAuthorizationMiddleware.UserWord]);
             if (!string.IsNullOrWhiteSpace(username))
@@ -110,13 +117,15 @@ namespace Shop_new.Controllers
             if (result.IsSuccessStatusCode)
             {
 
-                var token = tokenStore.GetToken(username, TimeSpan.FromMinutes(10));
+                var token = await authService.GetToken(username, TimeSpan.FromMinutes(10));
+                //var token = tokenStore.GetToken(username, TimeSpan.FromMinutes(10));
                 Response.Cookies.Append(CustomAuthorizationMiddleware.AuthorizationWord, $"Bearer {token}");
                 int userid = await userService.GetUserId(username, password);
                 if (userid > 0)
                 {
                     ViewBag.UserId = userid;
-                    return View("GetGoods");
+                    //return View("GetGoods");
+                    return RedirectToAction("GetGoods", new Dictionary<string, string>() { {"userid", userid.ToString() } });
                 }
                 else
                     return View(nameof(Register));
@@ -155,95 +164,113 @@ namespace Shop_new.Controllers
         public async Task<IActionResult> GetOrders(int? userid, int? page, int? perpage)
         {
             ViewData["Title"] = "Orders";
-            if (userid == null)
+            string username = "";
+            if (Request.Headers.Keys.Contains(CustomAuthorizationMiddleware.UserWord))
+                username = string.Join(string.Empty, Request.Headers[CustomAuthorizationMiddleware.UserWord]);
+            if (!string.IsNullOrWhiteSpace(username))
             {
-                ViewBag.UserId = null;
-                ViewBag.Message = "Invalid User";
-                return PartialView("_GetOrders");
-                //return StatusCode(400, "Invalid user"); //null;
-            }
-            if ((page != null && perpage == null) || (page == null && perpage != null))
-            {
-                ViewBag.UserId = userid.GetValueOrDefault(); ;
-                ViewBag.Message = "Invalid f Pages";
-                return PartialView("_GetOrders");
-                //return StatusCode(400, "Invalid pages");//null;
-            }
-            
-
-            if (page == null && perpage == null)
-            {
-                page = 0;
-                perpage = 0;
-            }
-            List<OrderModel> response = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), page.GetValueOrDefault(), perpage.GetValueOrDefault());
-            if (response != null)
-            {
-                List<PayOrderModel> resultList = new List<PayOrderModel>();
-                foreach (var order in response)
+                userid = await userService.GetUserIdByName(username);
+                if (userid == null)
                 {
-                    string response_bill = await billService.GetBillForOrder(order.Id);
-                    
-                    if (response_bill != "")
-                    {
-                        var model = new PayOrderModel
-                        {
-                            Id = order.Id,
-                            Date = order.Date,
-                            TotalSum = order.TotalSum,
-                            UserId = order.UserId,
-                            //AmountPaid = Convert.ToInt32(response_bill)
-
-                        };
-                        if (response_bill == null)
-                            model.AmountPaid = -1;
-                        else
-                            model.AmountPaid = Convert.ToInt32(response_bill);
-                        resultList.Add(model);
-                    }
+                    ViewBag.UserId = null;
+                    ViewBag.Message = "Invalid User";
+                    return PartialView("_GetOrders");
+                    //return StatusCode(400, "Invalid user"); //null;
                 }
-                ViewBag.UserId = userid;
-                ViewBag.Orders = resultList;
-                logger.LogInformation($"Number of orders for user {userid.GetValueOrDefault()}: {response.Count}");
-                // return StatusCode(200, response);
-                //return response;
-                //return StatusCode(200, response); //JsonConvert.SerializeObject(response);
-                return View("GetOrders", resultList);
+                if ((page != null && perpage == null) || (page == null && perpage != null))
+                {
+                    ViewBag.UserId = userid.GetValueOrDefault(); ;
+                    ViewBag.Message = "Invalid f Pages";
+                    return PartialView("_GetOrders");
+                    //return StatusCode(400, "Invalid pages");//null;
+                }
+
+
+                if (page == null && perpage == null)
+                {
+                    page = 0;
+                    perpage = 0;
+                }
+                List<OrderModel> response = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), page.GetValueOrDefault(), perpage.GetValueOrDefault());
+                if (response != null)
+                {
+                    List<PayOrderModel> resultList = new List<PayOrderModel>();
+                    foreach (var order in response)
+                    {
+                        string response_bill = await billService.GetBillForOrder(order.Id);
+
+                        if (response_bill != "")
+                        {
+                            var model = new PayOrderModel
+                            {
+                                Id = order.Id,
+                                Date = order.Date,
+                                TotalSum = order.TotalSum,
+                                UserId = order.UserId,
+                                //AmountPaid = Convert.ToInt32(response_bill)
+
+                            };
+                            if (response_bill == null)
+                                model.AmountPaid = -1;
+                            else
+                                model.AmountPaid = Convert.ToInt32(response_bill);
+                            resultList.Add(model);
+                        }
+                    }
+                    ViewBag.UserId = userid;
+                    ViewBag.Orders = resultList;
+                    logger.LogInformation($"Number of orders for user {userid.GetValueOrDefault()}: {response.Count}");
+                    // return StatusCode(200, response);
+                    //return response;
+                    //return StatusCode(200, response); //JsonConvert.SerializeObject(response);
+                    return View("GetOrders", resultList);
+                }
+                else
+                {
+                    logger.LogCritical("Orders service unavailable");
+                    ViewBag.UserId = userid.GetValueOrDefault();
+                    ViewBag.Message = "Orders servise unavailable";
+                    return PartialView("_GetOrders");
+                    //return View();
+                }
             }
-            else
-            {
-                logger.LogCritical("Orders service unavailable");
-                ViewBag.UserId = userid.GetValueOrDefault();
-                ViewBag.Message = "Orders servise unavailable";
-                return PartialView("_GetOrders");
-                //return View();
-            }
+            ViewBag.Message = "Error with authorization";
+            return PartialView("_GetOrders");
         }
 
         //[Authorize]
         [HttpGet("{userid}/goods")] //получить все товары
         public async Task<IActionResult> GetGoods(int? userid, int page = 0, int perpage = 0)
         {
-            ViewBag.UserId = userid;
-            List<OrderModel> response_order = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), 0, 0);
-            if (response_order != null && response_order.Count() > 0)
-                ViewBag.OrderIds = response_order;
-            else
-                ViewBag.OrderIds = null;
-            List<WareHouseModel> response = await warehouseService.GetAllInfo(page, perpage);
-            if (response != null)
+            string username = "";
+            if (Request.Headers.Keys.Contains(CustomAuthorizationMiddleware.UserWord))
+                username = string.Join(string.Empty, Request.Headers[CustomAuthorizationMiddleware.UserWord]);
+            if (!string.IsNullOrWhiteSpace(username))
             {
-                //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
-                return View(response);
-                //return response;
+                userid = await userService.GetUserIdByName(username);
+                ViewBag.UserId = userid;
+                List<OrderModel> response_order = await orderService.GetOrdersForUser(userid.GetValueOrDefault(), 0, 0);
+                if (response_order != null && response_order.Count() > 0)
+                    ViewBag.OrderIds = response_order;
+                else
+                    ViewBag.OrderIds = null;
+                List<WareHouseModel> response = await warehouseService.GetAllInfo(page, perpage);
+                if (response != null)
+                {
+                    //logger.LogInformation($"Number of orders for user {userid}: {response.Count}");
+                    return View(response);
+                    //return response;
+                }
+                else
+                {
+                    logger.LogCritical("Goods service unavailable");
+                    ViewBag.Message = "Goods service unavailable";
+                    return PartialView("_GetGoods");
+                    //return null;
+                }
             }
-            else
-            {
-                logger.LogCritical("Goods service unavailable");
-                ViewBag.Message = "Goods service unavailable";
-                return PartialView("_GetGoods");
-                //return null;
-            }
+            ViewBag.Message = "Error with authorization";
+            return PartialView("_GetGoods");
         }
 
         [Authorize]
