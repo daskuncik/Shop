@@ -73,7 +73,7 @@ namespace Shop_new.Services
             using (var client = new HttpClient())
                 try
                 {
-                    await EstablishConnection(client);
+                    //await EstablishConnection(client);
                     var result = await client.GetAsync(GetAddress(addr));
                     return result.StatusCode != System.Net.HttpStatusCode.Forbidden ? result : null;
                 }

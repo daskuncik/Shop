@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Shop_new.Services;
+using System.Security.Claims;
 
 namespace Shop_new.CustomAuthorisation
 {
@@ -31,7 +32,6 @@ namespace Shop_new.CustomAuthorisation
             if (context.Request.Cookies.Keys.Contains(AuthorizationWord))
             {
                 var auth = context.Request.Cookies[AuthorizationWord];
-                //await CheckAuthorization(context, auth);
                 await CheckBearerAuthorization(context, auth);
             }
             else if (context.Request.Path.Value.Split('/').Intersect(GetAnonymousPaths()).Any())
@@ -59,6 +59,13 @@ namespace Shop_new.CustomAuthorisation
                 //var result = tokensStore.CheckToken(token);
                 if (!string.IsNullOrWhiteSpace(result))
                 {
+                    string aa = GetRole(result);
+                    ClaimsIdentity identity = new ClaimsIdentity(new List<Claim>
+                    {
+                        new Claim(UserWord, result),
+                        new Claim(RoleWord, aa)
+                    }, "CustomAuthenticationType");
+                    context.User.AddIdentity(identity);
                     context.Request.Headers.Add(UserWord, result);
                     await this._next(context);
                     // string name = await this.auth.GetTokenByName(token);
@@ -75,5 +82,7 @@ namespace Shop_new.CustomAuthorisation
         public abstract List<string> GetAnonymousPaths();
 
         public abstract string GetUserByToken(string token);
+
+        public abstract string GetRole(string username);
     }
 }

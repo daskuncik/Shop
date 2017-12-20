@@ -107,5 +107,17 @@ namespace Shop_new.Services
             return aa;
 
         }
+
+        public async Task<string> GetRole(string name)
+        {
+            var httpResponseMessage = await Get($"get_role?username={name}");
+            //var httpResponseMessage = await PostForm("get_role", new Dictionary<string, string>() { { "username", name } });
+            if (httpResponseMessage == null || httpResponseMessage.Content == null)
+                return "";
+
+            string response = await httpResponseMessage.Content.ReadAsStringAsync();
+            return response;
+
+        }
     }
 }

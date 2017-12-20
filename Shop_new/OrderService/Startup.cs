@@ -30,7 +30,7 @@ namespace OrderService
             services.AddDbContext<OrderDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("OrderConnection")));
 
             services.BuildServiceProvider().GetRequiredService<OrderDbContext>().Database.Migrate();
-            services.AddSingleton<TokenStore>();
+            //services.AddSingleton<TokenStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

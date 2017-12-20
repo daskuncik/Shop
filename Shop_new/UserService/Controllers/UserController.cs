@@ -25,6 +25,13 @@ namespace UserService.Controllers
             return Ok();
         }
 
+        [HttpGet("get_role")]
+        public async Task<string> GetRole(string username)
+        {
+            var a = db.Users.FirstOrDefault(q => q.Name == username).Role;
+            return a;
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(string username, string password)
         {

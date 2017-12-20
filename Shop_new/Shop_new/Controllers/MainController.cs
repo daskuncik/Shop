@@ -16,10 +16,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Shop_new.CustomAuthorisation;
+using Statistics.EventBus;
+using Statistics.Events;
 
 namespace Shop_new.Controllers
 {
-    
+
     public class MainController : Controller
     {
         private BillService billService;
@@ -28,7 +30,7 @@ namespace Shop_new.Controllers
         private UserService userService;
         private ILogger<MainController> logger;
         private AuthService authService;
-        //private TokenStore tokenStore;
+        private IEventBus eventBus;
 
 
         public MainController(ILogger<MainController> logger,
@@ -36,8 +38,8 @@ namespace Shop_new.Controllers
             OrderService _orderService,
             WareHouseService _warehouseService,
             UserService _userService,
-            AuthService auth)
-           // TokenStore _tokenStore)
+            AuthService auth,
+            IEventBus evb)
         {
             this.logger = logger;
             this.billService = _billService;
@@ -45,7 +47,7 @@ namespace Shop_new.Controllers
             this.warehouseService = _warehouseService;
             this.userService = _userService;
             this.authService = auth;
-            //this.tokenStore = _tokenStore;
+            this.eventBus = evb;
         }
 
         //[Authorize]
@@ -60,7 +62,7 @@ namespace Shop_new.Controllers
             {
                 int userid = await userService.GetUserIdByName(username);
                 ViewBag.UserId = userid;
-                Dictionary<string, string> parametrs = new Dictionary<string, string>(); 
+                Dictionary<string, string> parametrs = new Dictionary<string, string>();
                 parametrs.Add("userid", userid.ToString());
                 return RedirectToAction("GetOrders", parametrs);
             }
@@ -125,6 +127,14 @@ namespace Shop_new.Controllers
                 {
                     ViewBag.UserId = userid;
                     //return View("GetGoods");
+                    var event1 = new LoginEvent()
+                    {
+                        Name = username,
+                        OccurenceTime = DateTime.Now,
+                        Origin = "In"
+                    };
+                    eventBus.Publish(event1);
+
                     return RedirectToAction("GetGoods", new Dictionary<string, string>() { {"userid", userid.ToString() } });
                 }
                 else
@@ -155,6 +165,7 @@ namespace Shop_new.Controllers
             {
                 var cookie = Request.Cookies[CustomAuthorizationMiddleware.AuthorizationWord];
                 Response.Cookies.Append(CustomAuthorizationMiddleware.AuthorizationWord, cookie, new Microsoft.AspNetCore.Http.CookieOptions { Expires = DateTime.Now.AddDays(-1) });
+
             }
             return RedirectToAction(nameof(Register));
         }
@@ -418,6 +429,13 @@ namespace Shop_new.Controllers
                         {
                             logger.LogInformation($"Bill for order {orderid} successful created");
                             ViewBag.Message = "Order & Bill successfully created";
+                            var event1 = new AddOrderEvent()
+                            {
+                                Orderid = orderid.ToString(),
+                                Userid = userid.ToString(),
+                                OccurenceTime = DateTime.Now
+                            };
+                            eventBus.Publish(event1);
                             return View();
                             //return Ok();
                         }
@@ -498,6 +516,13 @@ namespace Shop_new.Controllers
                             {
                                 logger.LogInformation($"Added sum to order, response {response_2.StatusCode}");
                                 ViewBag.Message = $"Order unit added to your order {orderid}";
+                                var event1 = new AddGoodsEvent()
+                                {
+                                    Orderid = orderid.ToString(),
+                                    Goodsid = goodsid.ToString(),
+                                    OccurenceTime = DateTime.Now
+                                };
+                                eventBus.Publish(event1);
                                 return View();
                                 //return Ok();
                             }
@@ -613,6 +638,13 @@ namespace Shop_new.Controllers
                         if (response_2.IsSuccessStatusCode)
                         {
                             ViewBag.Message = "You added payment success";
+                            var event1 = new AddPayEvent()
+                            {
+                                Orderid = orderid.ToString(),
+                                Userid = userid.ToString(),
+                                Sum = sum.ToString()
+                            };
+                            eventBus.Publish(event1);
                             return PartialView("_AddPayment");
                             //return Ok();
                         }
@@ -671,12 +703,26 @@ namespace Shop_new.Controllers
                         if (response_4.IsSuccessStatusCode)
                         {
                             ViewBag.Message = "You added payment success";
+                            var event1 = new AddPayEvent()
+                            {
+                                Orderid = orderid.ToString(),
+                                Userid = userid.ToString(),
+                                Sum = sum.ToString()
+                            };
+                            eventBus.Publish(event1);
                             return PartialView("_AddPayment");
                             //return Ok();
                         }
                         if (response_4.StatusCode == System.Net.HttpStatusCode.Accepted)
                         {
                             ViewBag.Message = "Your order is successfuly closed";
+                            var event1 = new AddPayEvent()
+                            {
+                                Orderid = orderid.ToString(),
+                                Userid = userid.ToString(),
+                                Sum = sum.ToString()
+                            };
+                            eventBus.Publish(event1);
                             //сделать здесь декремент тех вещей на складе, которые есть в этом заказе
                             return PartialView("_AddPayment");
                         }
@@ -703,12 +749,26 @@ namespace Shop_new.Controllers
                     if (response_5.IsSuccessStatusCode)
                     {
                         ViewBag.Message = "You added payment success";
+                        var event1 = new AddPayEvent()
+                        {
+                            Orderid = orderid.ToString(),
+                            Userid = userid.ToString(),
+                            Sum = sum.ToString()
+                        };
+                        eventBus.Publish(event1);
                         return PartialView("_AddPayment");
                     }
                     //return StatusCode(400, "Bad Request for add bill");
                     if (response_5.StatusCode == System.Net.HttpStatusCode.Accepted)
                     {
                         ViewBag.Message = "Your order is successfuly closed";
+                        var event1 = new AddPayEvent()
+                        {
+                            Orderid = orderid.ToString(),
+                            Userid = userid.ToString(),
+                            Sum = sum.ToString()
+                        };
+                        eventBus.Publish(event1);
                         //сделать здесь декремент тех вещей на складе, которые есть в этом заказе
                         return PartialView("_AddPayment");
                     }
@@ -761,10 +821,23 @@ namespace Shop_new.Controllers
                     if (response_2 != null && response_2.IsSuccessStatusCode)
                     {
                         ViewBag.Message = $"Order {orderid.GetValueOrDefault()} & bill was successfully removed";
+                        var event2 = new DeleteOrderEvent()
+                        {
+                            Orderid = orderid.ToString(),
+                            Userid = userid.ToString(),
+                            OccurenceTime = DateTime.Now
+                        };
+                        eventBus.Publish(event2);
                         return View();
                         //return Ok();
                     }
-
+                    var event1 = new DeleteOrderEvent()
+                    {
+                        Orderid = orderid.ToString(),
+                        Userid = userid.ToString(),
+                        OccurenceTime = DateTime.Now
+                    };
+                    eventBus.Publish(event1);
                     MyQeue.Retry(async () =>
                     {
                         using (var client = new HttpClient())
@@ -886,6 +959,13 @@ namespace Shop_new.Controllers
                 if (subSum.IsSuccessStatusCode)
                 {
                     ViewBag.Message = "Removing was successful";
+                    var event1 = new DeleteGoodsEvent()
+                    {
+                        Orderid = orderid.ToString(),
+                        Goodsid = userid.ToString(),
+                        OccurenceTime = DateTime.Now
+                    };
+                    eventBus.Publish(event1);
                     return View();
                 }
                 else

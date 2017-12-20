@@ -1,0 +1,13 @@
+﻿@{
+    ViewData["Title"] = "Order Addition statistics";
+}
+
+<dx-data-grid>
+    <datasource load-action="OrderAddDetail" />
+    <column datafield="orderId" caption="Order Id">
+    </column>
+    <column datafield="userId" caption="User Id">
+    </column>
+    <column datafield="time" caption="Time">
+    </column>
+</dx-data-grid>

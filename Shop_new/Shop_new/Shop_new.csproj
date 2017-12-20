@@ -5,6 +5,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="CustomAuthorisation\Controllers\**" />
+    <Content Remove="CustomAuthorisation\Controllers\**" />
+    <EmbeddedResource Remove="CustomAuthorisation\Controllers\**" />
+    <None Remove="CustomAuthorisation\Controllers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExtreme.AspNet.Data" Version="1.3.0" />
+    <PackageReference Include="DevExtreme.AspNet.TagHelpers" Version="15.2.11" />
     <PackageReference Include="IdentityServer4" Version="2.0.4" />
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
@@ -17,12 +26,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CustomAuthorisation\Controllers\" />
     <Folder Include="Data\" />
     <Folder Include="Views\Shared\" />
     <Folder Include="wwwroot\css\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\js\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Statistics\Statistics.csproj" />
   </ItemGroup>
 
 </Project>

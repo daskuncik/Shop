@@ -18,6 +18,9 @@ using Shop_new.CustomAuthorisation;
 using IdentityServer4.AccessTokenValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Statistics.EventBus;
+using Statistics.EventsStorage;
+using Statistics.EventHandlers;
 
 namespace Shop_new
 {
@@ -45,6 +48,7 @@ namespace Shop_new
             services.AddTransient<WareHouseService>();
             services.AddTransient<UserService>();
             services.AddTransient<AuthService>();
+            services.AddTransient<StatisticService>();
 
             services.AddLogging(lb => lb.AddConsole());
             services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
@@ -67,13 +71,18 @@ namespace Shop_new
             //options.UseInMemoryDatabase("Tokenss"));
 
             //services.AddTransient<TokenStore>();
+            services.AddSingleton<IEventBus, RabbitEventBus>();
+            services.AddSingleton<IEventStorage, EventStorage>();
+            services.AddSingleton<IEventHandler, AckEventHandler>();
+
             services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+            //JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+            app.ApplicationServices.GetServices<IEventHandler>();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

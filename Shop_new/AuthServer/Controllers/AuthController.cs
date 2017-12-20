@@ -112,21 +112,32 @@ namespace AuthServer.Controllers
         //   Используется с TokenStore:
 
 
-        //[HttpPost("gettoken")]
-        //public async Task<string> GetToken(string _owner, TimeSpan expiration)
-        //{
-        //    var response = tokenStore.GetToken(_owner, expiration);
-        //    return response;
+        [HttpPost("gettoken")]
+        public async Task<string> GetToken(string _owner, TimeSpan expiration)
+        {
+            var a = new Models.Token
+            {
+                Id = Guid.NewGuid().ToString(),
+                Owner = _owner,
+                Expiration = DateTime.Now+expiration
+            };
+            tokenDbContext.Add(a);
+            tokenDbContext.SaveChanges();
+            //var response = tokenStore.GetToken(_owner, expiration);
+            return a.Id;
 
-        //}
+        }
 
-        //[HttpPost("gettokenbyname")]
-        //public async Task<string> GetNameByToken(string token)
-        //{
-        //    var response = tokenStore.GetNameByToken(token);
-        //    return response;
+        [HttpPost("gettokenbyname")]
+        public async Task<string> GetNameByToken(string token)
+        {
+            var a = tokenDbContext.Tokens.FirstOrDefault(q => q.Id == token).Id;
+            return a;
+            //var response = tokenStore.GetNameByToken(token);
+            //return response;
+           
 
-        //}
+        }
 
     }
 }

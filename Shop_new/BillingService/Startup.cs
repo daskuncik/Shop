@@ -31,7 +31,7 @@ namespace BillingService
             services.AddDbContext<BillDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("BillConnection")));
 
             services.BuildServiceProvider().GetRequiredService<BillDbContext>().Database.Migrate();
-            services.AddSingleton<TokenStore>();
+            //services.AddSingleton<TokenStore>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

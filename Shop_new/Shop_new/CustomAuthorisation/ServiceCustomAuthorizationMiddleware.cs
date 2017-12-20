@@ -26,7 +26,8 @@ namespace Shop_new.CustomAuthorisation
             if (IsBasicAuthorizationSuccess(context))
             {
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync(tokensStore.GetToken(serviceWord, TimeSpan.FromMinutes(15)));
+                string token = tokensStore.GetToken(serviceWord, TimeSpan.FromMinutes(15));
+                await context.Response.WriteAsync(token);
                 return;
             }
             else if (IsBearerAuthorization(context))
@@ -60,20 +61,20 @@ namespace Shop_new.CustomAuthorisation
             }
         }
 
-        private bool RequestedToken(HttpContext context)
-        {
-            if (context.Request.Headers.Keys.Contains(AuthorizationWord))
-            {
-                var match = Regex.Match(string.Join(string.Empty, context.Request.Headers[AuthorizationWord]), @"Basic (\S+)");
-                if (match.Groups.Count > 1)
-                {
-                    var appIdAndSecret = Encoding.UTF8.GetString(Convert.FromBase64String(match.Groups[1].Value)).Split(':');
-                    if (allowedApps.Contains((appIdAndSecret[0], appIdAndSecret[1])))
-                        return true;
-                }
-            }
-            return false;
-        }
+        //private bool RequestedToken(HttpContext context)
+        //{
+        //    if (context.Request.Headers.Keys.Contains(AuthorizationWord))
+        //    {
+        //        var match = Regex.Match(string.Join(string.Empty, context.Request.Headers[AuthorizationWord]), @"Basic (\S+)");
+        //        if (match.Groups.Count > 1)
+        //        {
+        //            var appIdAndSecret = Encoding.UTF8.GetString(Convert.FromBase64String(match.Groups[1].Value)).Split(':');
+        //            if (allowedApps.Contains((appIdAndSecret[0], appIdAndSecret[1])))
+        //                return true;
+        //        }
+        //    }
+        //    return false;
+        //}
 
         private bool IsBasicAuthorizationSuccess(HttpContext context)
         {
@@ -95,6 +96,11 @@ namespace Shop_new.CustomAuthorisation
         public override string GetUserByToken(string token)
         {
             return tokensStore.GetNameByToken(token);
+        }
+
+        public override string GetRole(string username)
+        {
+            return "";
         }
 
     }

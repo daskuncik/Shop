@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Shop_new.Models;
+using AuthServer.Models;
 
 namespace AuthServer
 {

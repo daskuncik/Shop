@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Requests statistics";
+}
+<dx-chart>
+    <datasource load-action="Requests" />
+    <common-series-settings argument-field="time" value-field="count" type="FullStackedBar" />
+    <series-template name-field="from" />
+    <value-axis>
+        <label format="Decimal" />
+    </value-axis>
+    <title text="Requests"></title>
+    <legend vertical-alignment="Bottom" horizontal-alignment="Center" />
+    <tooltip enabled="true" />
+</dx-chart>
+<dx-data-grid>
+    <datasource load-action="RequestsDetail" />
+    <column datafield="from" caption="Origin">
+    </column>
+    <column datafield="time" caption="Arrived on">
+    </column>
+</dx-data-grid>
